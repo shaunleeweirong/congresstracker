@@ -1,0 +1,905 @@
+openapi: 3.0.3
+info:
+  title: Congressional Trading Transparency Platform API
+  description: API for tracking congressional and corporate insider trading data
+  version: 1.0.0
+servers:
+  - url: http://localhost:3001/api/v1
+    description: Development server
+  - url: https://api.congresstracker.com/v1
+    description: Production server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  
+  schemas:
+    # Core Entities
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        subscriptionStatus:
+          type: string
+          enum: [active, suspended, cancelled]
+        createdAt:
+          type: string
+          format: date-time
+    
+    CongressionalMember:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        position:
+          type: string
+          enum: [senator, representative]
+        stateCode:
+          type: string
+          pattern: '^[A-Z]{2}$'
+        district:
+          type: integer
+          nullable: true
+        partyAffiliation:
+          type: string
+          enum: [democratic, republican, independent, other]
+        officeStartDate:
+          type: string
+          format: date
+        officeEndDate:
+          type: string
+          format: date
+          nullable: true
+    
+    StockTicker:
+      type: object
+      properties:
+        symbol:
+          type: string
+          maxLength: 10
+        companyName:
+          type: string
+        sector:
+          type: string
+        industry:
+          type: string
+        marketCap:
+          type: integer
+          format: int64
+        lastPrice:
+          type: number
+          format: decimal
+        lastUpdated:
+          type: string
+          format: date-time
+    
+    StockTrade:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        traderType:
+          type: string
+          enum: [congressional, corporate]
+        traderId:
+          type: string
+          format: uuid
+        tickerSymbol:
+          type: string
+        transactionDate:
+          type: string
+          format: date
+        transactionType:
+          type: string
+          enum: [buy, sell, exchange]
+        amountRange:
+          type: string
+        estimatedValue:
+          type: number
+          format: decimal
+        quantity:
+          type: integer
+          nullable: true
+        filingDate:
+          type: string
+          format: date
+          nullable: true
+        trader:
+          oneOf:
+            - $ref: '#/components/schemas/CongressionalMember'
+            - $ref: '#/components/schemas/CorporateInsider'
+        stock:
+          $ref: '#/components/schemas/StockTicker'
+    
+    CorporateInsider:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        companyName:
+          type: string
+        position:
+          type: string
+        tickerSymbol:
+          type: string
+          maxLength: 10
+    
+    UserAlert:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        alertType:
+          type: string
+          enum: [politician, stock, pattern]
+        alertStatus:
+          type: string
+          enum: [active, paused, deleted]
+        politicianId:
+          type: string
+          format: uuid
+          nullable: true
+        tickerSymbol:
+          type: string
+          nullable: true
+        patternConfig:
+          type: object
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        lastTriggeredAt:
+          type: string
+          format: date-time
+          nullable: true
+    
+    UserFollow:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        traderType:
+          type: string
+          enum: [congressional, corporate]
+        traderId:
+          type: string
+          format: uuid
+        followedAt:
+          type: string
+          format: date-time
+        billingStatus:
+          type: string
+          enum: [active, suspended, cancelled]
+        trader:
+          oneOf:
+            - $ref: '#/components/schemas/CongressionalMember'
+            - $ref: '#/components/schemas/CorporateInsider'
+    
+    AlertNotification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        message:
+          type: string
+        deliveredAt:
+          type: string
+          format: date-time
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+        trade:
+          $ref: '#/components/schemas/StockTrade'
+    
+    PortfolioConcentration:
+      type: object
+      properties:
+        traderId:
+          type: string
+          format: uuid
+        traderType:
+          type: string
+          enum: [congressional, corporate]
+        holdings:
+          type: array
+          items:
+            type: object
+            properties:
+              tickerSymbol:
+                type: string
+              companyName:
+                type: string
+              netPositionValue:
+                type: number
+                format: decimal
+              positionPercentage:
+                type: number
+                format: decimal
+              transactionCount:
+                type: integer
+              latestTransaction:
+                type: string
+                format: date
+    
+    # Request/Response Schemas
+    SearchRequest:
+      type: object
+      properties:
+        query:
+          type: string
+          minLength: 1
+        type:
+          type: string
+          enum: [politician, stock, all]
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+    
+    TradeFilters:
+      type: object
+      properties:
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        transactionType:
+          type: string
+          enum: [buy, sell, exchange]
+        minValue:
+          type: number
+          format: decimal
+        maxValue:
+          type: number
+          format: decimal
+        tickerSymbol:
+          type: string
+        traderId:
+          type: string
+          format: uuid
+    
+    CreateAlertRequest:
+      type: object
+      required: [alertType]
+      properties:
+        alertType:
+          type: string
+          enum: [politician, stock, pattern]
+        politicianId:
+          type: string
+          format: uuid
+        tickerSymbol:
+          type: string
+        patternConfig:
+          type: object
+    
+    PaginatedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+            limit:
+              type: integer
+            total:
+              type: integer
+            pages:
+              type: integer
+    
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: string
+
+paths:
+  # Authentication
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: User login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: User registration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, name]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                name:
+                  type: string
+      responses:
+        '201':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Search
+  /search:
+    get:
+      tags: [Search]
+      summary: Search politicians and stocks
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [politician, stock, all]
+            default: all
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  politicians:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CongressionalMember'
+                  stocks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StockTicker'
+        '400':
+          description: Invalid search parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Trades
+  /trades:
+    get:
+      tags: [Trades]
+      summary: Get stock trades with filters
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: transactionType
+          in: query
+          schema:
+            type: string
+            enum: [buy, sell, exchange]
+        - name: minValue
+          in: query
+          schema:
+            type: number
+        - name: maxValue
+          in: query
+          schema:
+            type: number
+        - name: tickerSymbol
+          in: query
+          schema:
+            type: string
+        - name: traderId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: List of trades
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/StockTrade'
+
+  /trades/politician/{politicianId}:
+    get:
+      tags: [Trades]
+      summary: Get trades for specific politician
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: politicianId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Politician's trades
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/StockTrade'
+        '404':
+          description: Politician not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /trades/stock/{symbol}:
+    get:
+      tags: [Trades]
+      summary: Get all trades for specific stock
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Stock trades
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/StockTrade'
+
+  # User Alerts
+  /alerts:
+    get:
+      tags: [Alerts]
+      summary: Get user alerts
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of user alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserAlert'
+    
+    post:
+      tags: [Alerts]
+      summary: Create new alert
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAlertRequest'
+      responses:
+        '201':
+          description: Alert created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAlert'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /alerts/{alertId}:
+    put:
+      tags: [Alerts]
+      summary: Update alert
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: alertId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                alertStatus:
+                  type: string
+                  enum: [active, paused, deleted]
+      responses:
+        '200':
+          description: Alert updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAlert'
+        '404':
+          description: Alert not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    delete:
+      tags: [Alerts]
+      summary: Delete alert
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: alertId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Alert deleted
+        '404':
+          description: Alert not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # User Follows (Billing)
+  /follows:
+    get:
+      tags: [Follows]
+      summary: Get user follows
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of followed traders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserFollow'
+    
+    post:
+      tags: [Follows]
+      summary: Follow a politician or insider
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [traderType, traderId]
+              properties:
+                traderType:
+                  type: string
+                  enum: [congressional, corporate]
+                traderId:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Follow created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserFollow'
+        '400':
+          description: Already following or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /follows/{followId}:
+    delete:
+      tags: [Follows]
+      summary: Unfollow a trader
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: followId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Unfollowed successfully
+        '404':
+          description: Follow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Analytics
+  /analytics/portfolio-concentration/{traderId}:
+    get:
+      tags: [Analytics]
+      summary: Get portfolio concentration for a trader
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: traderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        '200':
+          description: Portfolio concentration data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioConcentration'
+        '404':
+          description: Trader not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Notifications
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Get user notifications
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AlertNotification'
+
+  /notifications/{notificationId}/read:
+    post:
+      tags: [Notifications]
+      summary: Mark notification as read
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Notification marked as read
+        '404':
+          description: Notification not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Server-Sent Events for real-time notifications
+  /events/notifications:
+    get:
+      tags: [Events]
+      summary: Server-sent events for real-time notifications
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Search
+    description: Search politicians and stocks
+  - name: Trades
+    description: Stock trading data
+  - name: Alerts
+    description: User alert management
+  - name: Follows
+    description: User follows and billing
+  - name: Analytics
+    description: Portfolio concentration analytics
+  - name: Notifications
+    description: User notifications
+  - name: Events
+    description: Real-time events and notifications
