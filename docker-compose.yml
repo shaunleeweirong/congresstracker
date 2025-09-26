@@ -1,0 +1,116 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: congresstracker
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d/migrations
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d congresstracker"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API (Development)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:password123@postgres:5432/congresstracker
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: your_jwt_secret_key_here_minimum_32_characters
+      FMP_API_KEY: your_fmp_api_key_here
+      PORT: 3001
+      CORS_ORIGIN: http://localhost:3000
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+      - ./shared:/app/shared
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: npm run dev
+    profiles:
+      - dev
+
+  # Frontend (Development)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api/v1
+      NEXTAUTH_SECRET: your_nextauth_secret_here
+      NEXTAUTH_URL: http://localhost:3000
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/package.json:/app/package.json
+      - ./shared:/app/shared
+    depends_on:
+      - backend
+    command: npm run dev
+    profiles:
+      - dev
+
+volumes:
+  postgres_data:
+  redis_data:
+
+# Additional services for development tools
+# Uncomment these if you want to run additional development tools
+
+# # pgAdmin for database management
+# pgadmin:
+#   image: dpage/pgadmin4:latest
+#   environment:
+#     PGADMIN_DEFAULT_EMAIL: admin@example.com
+#     PGADMIN_DEFAULT_PASSWORD: admin123
+#   ports:
+#     - "8080:80"
+#   depends_on:
+#     - postgres
+#   profiles:
+#     - tools
+
+# # Redis Commander for Redis management
+# redis-commander:
+#   image: rediscommander/redis-commander:latest
+#   environment:
+#     REDIS_HOSTS: local:redis:6379
+#   ports:
+#     - "8081:8081"
+#   depends_on:
+#     - redis
+#   profiles:
+#     - tools

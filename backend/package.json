@@ -1,0 +1,66 @@
+{
+  "name": "congresstracker-backend",
+  "version": "1.0.0",
+  "description": "Congressional Trading Transparency Platform - Backend API",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --write src/**/*.ts",
+    "db:migrate": "node -r tsx/cjs src/scripts/migrate.ts",
+    "db:seed": "node -r tsx/cjs src/scripts/seed.ts"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "typescript": "^5.3.0",
+    "pg": "^8.11.3",
+    "redis": "^4.6.10",
+    "axios": "^1.6.0",
+    "bcrypt": "^5.1.1",
+    "jsonwebtoken": "^9.0.2",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "express-validator": "^7.0.1",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.9.0",
+    "@types/express": "^4.17.21",
+    "@types/pg": "^8.10.7",
+    "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/cors": "^2.8.17",
+    "@types/uuid": "^9.0.7",
+    "@types/jest": "^29.5.8",
+    "@types/supertest": "^2.0.16",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "ts-jest": "^29.1.1",
+    "tsx": "^4.4.0",
+    "eslint": "^8.54.0",
+    "@typescript-eslint/eslint-plugin": "^6.12.0",
+    "@typescript-eslint/parser": "^6.12.0",
+    "prettier": "^3.1.0",
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "congressional-trading",
+    "transparency",
+    "api",
+    "express",
+    "typescript"
+  ],
+  "author": "Congressional Tracker Team",
+  "license": "MIT"
+}
