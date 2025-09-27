@@ -95,19 +95,19 @@
 ## Phase 3.3: Core Backend Implementation
 
 ### Database Models
-- [ ] **T034** [P] Implement User model at `backend/src/models/User.ts` with authentication methods
-- [ ] **T035** [P] Implement CongressionalMember model at `backend/src/models/CongressionalMember.ts`
-- [ ] **T036** [P] Implement StockTicker model at `backend/src/models/StockTicker.ts`
-- [ ] **T037** [P] Implement StockTrade model at `backend/src/models/StockTrade.ts` with polymorphic trader relationships
-- [ ] **T038** [P] Implement UserAlert model at `backend/src/models/UserAlert.ts` with polymorphic alert types
-- [ ] **T039** [P] Implement UserFollow model at `backend/src/models/UserFollow.ts` for billing tracking
-- [ ] **T040** [P] Implement AlertNotification model at `backend/src/models/AlertNotification.ts`
+- [x] **T034** [P] Implement User model at `backend/src/models/User.ts` with authentication methods
+- [x] **T035** [P] Implement CongressionalMember model at `backend/src/models/CongressionalMember.ts`
+- [x] **T036** [P] Implement StockTicker model at `backend/src/models/StockTicker.ts`
+- [x] **T037** [P] Implement StockTrade model at `backend/src/models/StockTrade.ts` with polymorphic trader relationships
+- [x] **T038** [P] Implement UserAlert model at `backend/src/models/UserAlert.ts` with polymorphic alert types
+- [x] **T039** [P] Implement UserFollow model at `backend/src/models/UserFollow.ts` for billing tracking
+- [x] **T040** [P] Implement AlertNotification model at `backend/src/models/AlertNotification.ts`
 
 ### Authentication & Middleware
-- [ ] **T041** Create authentication middleware at `backend/src/middleware/auth.ts` with JWT verification
-- [ ] **T042** Create input validation middleware at `backend/src/middleware/validation.ts` using express-validator
-- [ ] **T043** Create error handling middleware at `backend/src/middleware/errors.ts` with structured error responses
-- [ ] **T044** Create rate limiting middleware at `backend/src/middleware/rateLimit.ts` for API protection
+- [x] **T041** Create authentication middleware at `backend/src/middleware/auth.ts` with JWT verification
+- [x] **T042** Create input validation middleware at `backend/src/middleware/validation.ts` using express-validator
+- [x] **T043** Create error handling middleware at `backend/src/middleware/errors.ts` with structured error responses
+- [x] **T044** Create rate limiting middleware at `backend/src/middleware/rateLimit.ts` for API protection
 
 ### Services Layer
 - [ ] **T045** [P] Implement AuthService at `backend/src/services/AuthService.ts` with bcrypt password hashing
