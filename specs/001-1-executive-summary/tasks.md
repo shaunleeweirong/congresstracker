@@ -110,25 +110,25 @@
 - [x] **T044** Create rate limiting middleware at `backend/src/middleware/rateLimit.ts` for API protection
 
 ### Services Layer
-- [ ] **T045** [P] Implement AuthService at `backend/src/services/AuthService.ts` with bcrypt password hashing
-- [ ] **T046** [P] Implement SearchService at `backend/src/services/SearchService.ts` with politician and stock search
-- [ ] **T047** [P] Implement TradeService at `backend/src/services/TradeService.ts` with filtering and pagination
-- [ ] **T048** [P] Implement AlertService at `backend/src/services/AlertService.ts` with notification triggering
-- [ ] **T049** [P] Implement FollowService at `backend/src/services/FollowService.ts` with billing logic
-- [ ] **T050** [P] Implement AnalyticsService at `backend/src/services/AnalyticsService.ts` for portfolio concentration
+- [x] **T045** [P] Implement AuthService at `backend/src/services/AuthService.ts` with bcrypt password hashing
+- [x] **T046** [P] Implement SearchService at `backend/src/services/SearchService.ts` with politician and stock search
+- [x] **T047** [P] Implement TradeService at `backend/src/services/TradeService.ts` with filtering and pagination
+- [x] **T048** [P] Implement AlertService at `backend/src/services/AlertService.ts` with notification triggering
+- [x] **T049** [P] Implement FollowService at `backend/src/services/FollowService.ts` with billing logic
+- [x] **T050** [P] Implement AnalyticsService at `backend/src/services/AnalyticsService.ts` for portfolio concentration
 
 ### API Controllers
-- [ ] **T051** Implement AuthController at `backend/src/controllers/AuthController.ts` with register/login endpoints
-- [ ] **T052** Implement SearchController at `backend/src/controllers/SearchController.ts` with unified search endpoint
-- [ ] **T053** Implement TradeController at `backend/src/controllers/TradeController.ts` with all trade endpoints
-- [ ] **T054** Implement AlertController at `backend/src/controllers/AlertController.ts` with CRUD operations
-- [ ] **T055** Implement FollowController at `backend/src/controllers/FollowController.ts` with billing integration
-- [ ] **T056** Implement AnalyticsController at `backend/src/controllers/AnalyticsController.ts` with concentration analytics
+- [x] **T051** Implement AuthController at `backend/src/controllers/AuthController.ts` with register/login endpoints
+- [x] **T052** Implement SearchController at `backend/src/controllers/SearchController.ts` with unified search endpoint
+- [x] **T053** Implement TradeController at `backend/src/controllers/TradeController.ts` with all trade endpoints
+- [x] **T054** Implement AlertController at `backend/src/controllers/AlertController.ts` with CRUD operations
+- [x] **T055** Implement FollowController at `backend/src/controllers/FollowController.ts` with billing integration
+- [x] **T056** Implement AnalyticsController at `backend/src/controllers/AnalyticsController.ts` with concentration analytics
 
 ### API Routes
-- [ ] **T057** Set up Express router and routes at `backend/src/routes/index.ts` connecting all controllers
-- [ ] **T058** Create main Express application at `backend/src/app.ts` with middleware and error handling
-- [ ] **T059** Create server entry point at `backend/src/server.ts` with graceful shutdown
+- [x] **T057** Set up Express router and routes at `backend/src/routes/index.ts` connecting all controllers
+- [x] **T058** Create main Express application at `backend/src/app.ts` with middleware and error handling
+- [x] **T059** Create server entry point at `backend/src/server.ts` with graceful shutdown
 
 ---
 
