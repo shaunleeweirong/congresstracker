@@ -66,29 +66,29 @@
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE IMPLEMENTATION
 
 ### API Contract Tests
-- [ ] **T015** [P] Create contract test for `/auth/register` endpoint at `backend/tests/contracts/auth.test.ts`
-- [ ] **T016** [P] Create contract test for `/auth/login` endpoint at `backend/tests/contracts/auth.test.ts`
-- [ ] **T017** [P] Create contract test for `/search` endpoint at `backend/tests/contracts/search.test.ts`
-- [ ] **T018** [P] Create contract test for `/trades` endpoints at `backend/tests/contracts/trades.test.ts`
-- [ ] **T019** [P] Create contract test for `/alerts` endpoints at `backend/tests/contracts/alerts.test.ts`
-- [ ] **T020** [P] Create contract test for `/follows` endpoints at `backend/tests/contracts/follows.test.ts`
-- [ ] **T021** [P] Create contract test for `/analytics/portfolio-concentration` at `backend/tests/contracts/analytics.test.ts`
+- [x] **T015** [P] Create contract test for `/auth/register` endpoint at `backend/tests/contracts/auth.test.ts`
+- [x] **T016** [P] Create contract test for `/auth/login` endpoint at `backend/tests/contracts/auth.test.ts`
+- [x] **T017** [P] Create contract test for `/search` endpoint at `backend/tests/contracts/search.test.ts`
+- [x] **T018** [P] Create contract test for `/trades` endpoints at `backend/tests/contracts/trades.test.ts`
+- [x] **T019** [P] Create contract test for `/alerts` endpoints at `backend/tests/contracts/alerts.test.ts`
+- [x] **T020** [P] Create contract test for `/follows` endpoints at `backend/tests/contracts/follows.test.ts`
+- [x] **T021** [P] Create contract test for `/analytics/portfolio-concentration` at `backend/tests/contracts/analytics.test.ts`
 
 ### Integration Tests (Based on Quickstart Scenarios)
-- [ ] **T022** [P] Create integration test for user registration & authentication flow at `backend/tests/integration/auth.integration.test.ts`
-- [ ] **T023** [P] Create integration test for search politicians and stocks at `backend/tests/integration/search.integration.test.ts`
-- [ ] **T024** [P] Create integration test for trading data with filters at `backend/tests/integration/trades.integration.test.ts`
-- [ ] **T025** [P] Create integration test for politician-specific trading data at `backend/tests/integration/politician-trades.integration.test.ts`
-- [ ] **T026** [P] Create integration test for stock-specific trading data at `backend/tests/integration/stock-trades.integration.test.ts`
-- [ ] **T027** [P] Create integration test for alert creation and management at `backend/tests/integration/alerts.integration.test.ts`
-- [ ] **T028** [P] Create integration test for follow politicians (billing) at `backend/tests/integration/follows.integration.test.ts`
-- [ ] **T029** [P] Create integration test for portfolio concentration analytics at `backend/tests/integration/analytics.integration.test.ts`
+- [x] **T022** [P] Create integration test for user registration & authentication flow at `backend/tests/integration/auth.integration.test.ts`
+- [x] **T023** [P] Create integration test for search politicians and stocks at `backend/tests/integration/search.integration.test.ts`
+- [x] **T024** [P] Create integration test for trading data with filters at `backend/tests/integration/trades.integration.test.ts`
+- [x] **T025** [P] Create integration test for politician-specific trading data at `backend/tests/integration/politician-trades.integration.test.ts`
+- [x] **T026** [P] Create integration test for stock-specific trading data at `backend/tests/integration/stock-trades.integration.test.ts`
+- [x] **T027** [P] Create integration test for alert creation and management at `backend/tests/integration/alerts.integration.test.ts`
+- [x] **T028** [P] Create integration test for follow politicians (billing) at `backend/tests/integration/follows.integration.test.ts`
+- [x] **T029** [P] Create integration test for portfolio concentration analytics at `backend/tests/integration/analytics.integration.test.ts`
 
 ### Frontend Component Tests
-- [ ] **T030** [P] Create component tests for authentication forms at `frontend/tests/components/auth.test.tsx`
-- [ ] **T031** [P] Create component tests for search functionality at `frontend/tests/components/search.test.tsx`
-- [ ] **T032** [P] Create component tests for trading data display at `frontend/tests/components/trades.test.tsx`
-- [ ] **T033** [P] Create component tests for alert management at `frontend/tests/components/alerts.test.tsx`
+- [x] **T030** [P] Create component tests for authentication forms at `frontend/tests/components/auth.test.tsx`
+- [x] **T031** [P] Create component tests for search functionality at `frontend/tests/components/search.test.tsx`
+- [x] **T032** [P] Create component tests for trading data display at `frontend/tests/components/trades.test.tsx`
+- [x] **T033** [P] Create component tests for alert management at `frontend/tests/components/alerts.test.tsx`
 
 ---
 
