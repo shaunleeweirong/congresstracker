@@ -145,11 +145,11 @@
 ## Phase 3.5: Frontend Implementation
 
 ### Authentication & Layout
-- [ ] **T064** Create authentication context at `frontend/src/contexts/AuthContext.tsx` using NextAuth.js
-- [ ] **T065** Implement login page at `frontend/src/app/login/page.tsx` with form validation
-- [ ] **T066** Implement registration page at `frontend/src/app/register/page.tsx` with form validation
-- [ ] **T067** Create main layout component at `frontend/src/components/layout/Layout.tsx` with navigation
-- [ ] **T068** Create protected route wrapper at `frontend/src/components/auth/ProtectedRoute.tsx`
+- [x] **T064** Create authentication context at `frontend/src/contexts/AuthContext.tsx` using NextAuth.js
+- [x] **T065** Implement login page at `frontend/src/app/login/page.tsx` with form validation
+- [x] **T066** Implement registration page at `frontend/src/app/register/page.tsx` with form validation
+- [x] **T067** Create main layout component at `frontend/src/components/layout/Layout.tsx` with navigation
+- [x] **T068** Create protected route wrapper at `frontend/src/components/auth/ProtectedRoute.tsx`
 
 ### Core Components
 - [ ] **T069** [P] Create search component at `frontend/src/components/search/SearchBar.tsx` with real-time suggestions
