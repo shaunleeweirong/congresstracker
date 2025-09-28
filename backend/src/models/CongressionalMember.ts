@@ -523,6 +523,118 @@ export class CongressionalMember {
   }
 
   /**
+   * Get statistics by state
+   */
+  static async getStateStatistics(): Promise<Array<{ state: string; count: number }>> {
+    const client = await db.connect();
+    try {
+      const result = await client.query(
+        `SELECT 
+           state_code as state,
+           COUNT(*) as count
+         FROM congressional_members 
+         WHERE office_end_date IS NULL OR office_end_date > NOW()
+         GROUP BY state_code
+         ORDER BY count DESC`
+      );
+
+      return result.rows.map(row => ({
+        state: row.state,
+        count: parseInt(row.count)
+      }));
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Find by name
+   */
+  static async findByName(name: string): Promise<CongressionalMember | null> {
+    const client = await db.connect();
+    try {
+      const result = await client.query(
+        'SELECT * FROM congressional_members WHERE name = $1',
+        [name]
+      );
+
+      if (result.rows.length === 0) {
+        return null;
+      }
+
+      const memberRow = result.rows[0];
+      return new CongressionalMember({
+        id: memberRow.id,
+        name: memberRow.name,
+        position: memberRow.position,
+        stateCode: memberRow.state_code,
+        district: memberRow.district,
+        partyAffiliation: memberRow.party_affiliation,
+        officeStartDate: memberRow.office_start_date,
+        officeEndDate: memberRow.office_end_date,
+        createdAt: memberRow.created_at,
+        updatedAt: memberRow.updated_at
+      });
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Search members
+   */
+  static async search(query: string, limit: number = 10): Promise<CongressionalMember[]> {
+    const client = await db.connect();
+    try {
+      const result = await client.query(
+        `SELECT * FROM congressional_members 
+         WHERE name ILIKE $1 OR state_code ILIKE $1
+         ORDER BY name ASC LIMIT $2`,
+        [`%${query}%`, limit]
+      );
+
+      return result.rows.map(row => new CongressionalMember({
+        id: row.id,
+        name: row.name,
+        position: row.position,
+        stateCode: row.state_code,
+        district: row.district,
+        partyAffiliation: row.party_affiliation,
+        officeStartDate: row.office_start_date,
+        officeEndDate: row.office_end_date,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      }));
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Get suggestions
+   */
+  static async getSuggestions(query: string, limit: number = 5): Promise<any[]> {
+    const results = await this.search(query, limit);
+    return results.map(member => ({
+      id: member.id,
+      name: member.name,
+      type: 'politician'
+    }));
+  }
+
+  /**
+   * Get popular members
+   */
+  static async getPopular(limit: number = 10): Promise<any[]> {
+    const results = await this.findWithRecentTrades(30, limit);
+    return results.map(member => ({
+      id: member.id,
+      name: member.name,
+      type: 'politician'
+    }));
+  }
+
+  /**
    * Convert to JSON
    */
   toJSON(): CongressionalMemberData {

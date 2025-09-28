@@ -257,5 +257,5 @@ export function isApiError(response: any): response is ApiError {
 }
 
 export function isValidationError(response: any): response is ValidationErrorResponse {
-  return isApiError(response) && Array.isArray(response.errors);
+  return isApiError(response) && Array.isArray((response as ValidationErrorResponse).errors);
 }

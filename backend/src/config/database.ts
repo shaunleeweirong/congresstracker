@@ -67,7 +67,7 @@ class Database {
     return Database.instance;
   }
 
-  public async query<T = any>(text: string, params?: any[]): Promise<QueryResult<T>> {
+  public async query<T extends Record<string, any> = any>(text: string, params?: any[]): Promise<QueryResult<T>> {
     const start = Date.now();
     try {
       const result = await this.pool.query<T>(text, params);
@@ -85,6 +85,10 @@ class Database {
   }
 
   public async getClient(): Promise<PoolClient> {
+    return this.pool.connect();
+  }
+
+  public async connect(): Promise<PoolClient> {
     return this.pool.connect();
   }
 
@@ -120,12 +124,12 @@ class Database {
   }
 
   // Helper methods for common operations
-  public async findById<T = any>(table: string, id: string): Promise<T | null> {
+  public async findById<T extends Record<string, any> = any>(table: string, id: string): Promise<T | null> {
     const result = await this.query<T>(`SELECT * FROM ${table} WHERE id = $1`, [id]);
     return result.rows[0] || null;
   }
 
-  public async findByField<T = any>(
+  public async findByField<T extends Record<string, any> = any>(
     table: string,
     field: string,
     value: any
@@ -134,7 +138,7 @@ class Database {
     return result.rows[0] || null;
   }
 
-  public async findMany<T = any>(
+  public async findMany<T extends Record<string, any> = any>(
     table: string,
     conditions: Record<string, any> = {},
     limit?: number,
@@ -168,10 +172,10 @@ class Database {
     return result.rows;
   }
 
-  public async insert<T = any>(
+  public async insert<T extends Record<string, any> = any>(
     table: string,
     data: Record<string, any>
-  ): Promise<T> {
+  ): Promise<T | null> {
     const fields = Object.keys(data);
     const values = Object.values(data);
     const placeholders = values.map((_, index) => `$${index + 1}`).join(', ');
@@ -183,10 +187,10 @@ class Database {
     `;
     
     const result = await this.query<T>(query, values);
-    return result.rows[0];
+    return result.rows[0] || null;
   }
 
-  public async update<T = any>(
+  public async update<T extends Record<string, any> = any>(
     table: string,
     id: string,
     data: Record<string, any>

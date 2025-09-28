@@ -135,10 +135,10 @@
 ## Phase 3.4: External API Integration
 
 ### Financial Modeling Prep Integration
-- [ ] **T060** [P] Create FMP API client at `backend/src/services/FMPClient.ts` with axios and rate limiting
-- [ ] **T061** [P] Implement congressional data sync at `backend/src/services/CongressionalDataService.ts` using FMP endpoints
-- [ ] **T062** [P] Create data synchronization job at `backend/src/jobs/syncTradingData.ts` for daily updates
-- [ ] **T063** [P] Implement caching layer at `backend/src/services/CacheService.ts` using Redis for FMP responses
+- [x] **T060** [P] Create FMP API client at `backend/src/services/FMPClient.ts` with axios and rate limiting
+- [x] **T061** [P] Implement congressional data sync at `backend/src/services/CongressionalDataService.ts` using FMP endpoints
+- [x] **T062** [P] Create data synchronization job at `backend/src/jobs/syncTradingData.ts` for daily updates
+- [x] **T063** [P] Implement caching layer at `backend/src/services/CacheService.ts` using Redis for FMP responses
 
 ---
 

@@ -6,11 +6,11 @@ dotenv.config();
 interface RedisConfig {
   host: string;
   port: number;
-  password?: string;
-  db?: number;
-  retryDelayOnFailover?: number;
-  maxRetriesPerRequest?: number;
-  retryDelayOnFailure?: number;
+  password?: string | undefined;
+  db?: number | undefined;
+  retryDelayOnFailover?: number | undefined;
+  maxRetriesPerRequest?: number | undefined;
+  retryDelayOnFailure?: number | undefined;
 }
 
 class Redis {
@@ -19,11 +19,14 @@ class Redis {
   private isConnected: boolean = false;
 
   private constructor() {
+    const password = process.env.REDIS_PASSWORD;
+    const db = parseInt(process.env.REDIS_DB || '0');
+    
     const config: RedisConfig = {
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379'),
-      password: process.env.REDIS_PASSWORD || undefined,
-      db: parseInt(process.env.REDIS_DB || '0'),
+      password: password || undefined,
+      db: db || undefined,
       retryDelayOnFailover: 100,
       maxRetriesPerRequest: 3,
       retryDelayOnFailure: 50,
@@ -38,15 +41,23 @@ class Redis {
         },
       });
     } else {
-      this.client = createClient({
+      const clientConfig: any = {
         socket: {
           host: config.host,
           port: config.port,
-          reconnectStrategy: (retries) => Math.min(retries * 50, 500),
+          reconnectStrategy: (retries: number) => Math.min(retries * 50, 500),
         },
-        password: config.password,
-        database: config.db,
-      });
+      };
+      
+      if (config.password) {
+        clientConfig.password = config.password;
+      }
+      
+      if (config.db) {
+        clientConfig.database = config.db;
+      }
+      
+      this.client = createClient(clientConfig);
     }
 
     this.setupEventHandlers();
@@ -130,7 +141,12 @@ class Redis {
     options?: { EX?: number; PX?: number; NX?: boolean; XX?: boolean }
   ): Promise<boolean> {
     try {
-      const result = await this.client.set(key, value, options);
+      let result: string | null;
+      if (options) {
+        result = await this.client.set(key, value, options as any);
+      } else {
+        result = await this.client.set(key, value);
+      }
       return result === 'OK';
     } catch (error) {
       console.error(`Redis SET error for key ${key}:`, error);
@@ -160,7 +176,7 @@ class Redis {
   public async expire(key: string, seconds: number): Promise<boolean> {
     try {
       const result = await this.client.expire(key, seconds);
-      return result === 1;
+      return result === true;
     } catch (error) {
       console.error(`Redis EXPIRE error for key ${key}:`, error);
       return false;
@@ -201,7 +217,8 @@ class Redis {
   // Hash operations
   public async hget(key: string, field: string): Promise<string | null> {
     try {
-      return await this.client.hGet(key, field);
+      const result = await this.client.hGet(key, field);
+      return result || null;
     } catch (error) {
       console.error(`Redis HGET error for key ${key}, field ${field}:`, error);
       return null;

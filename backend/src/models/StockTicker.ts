@@ -634,6 +634,46 @@ export class StockTicker {
   }
 
   /**
+   * Get suggestions for search
+   */
+  static async getSuggestions(query: string, limit: number = 5): Promise<any[]> {
+    const results = await this.search(query, limit);
+    return results.map(stock => ({
+      id: stock.symbol,
+      name: stock.companyName,
+      symbol: stock.symbol,
+      type: 'stock'
+    }));
+  }
+
+  /**
+   * Get distinct sectors
+   */
+  static async getDistinctSectors(): Promise<string[]> {
+    return this.getAllSectors();
+  }
+
+  /**
+   * Get distinct industries
+   */
+  static async getDistinctIndustries(): Promise<string[]> {
+    return this.getAllIndustries();
+  }
+
+  /**
+   * Get popular stocks (most traded)
+   */
+  static async getPopular(limit: number = 10): Promise<any[]> {
+    const results = await this.findMostTraded(30, limit);
+    return results.map(stock => ({
+      id: stock.symbol,
+      name: stock.companyName,
+      symbol: stock.symbol,
+      type: 'stock'
+    }));
+  }
+
+  /**
    * Convert to JSON
    */
   toJSON(): StockTickerData {

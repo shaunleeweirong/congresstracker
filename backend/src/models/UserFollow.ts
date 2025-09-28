@@ -303,6 +303,88 @@ export class UserFollow {
   }
 
   /**
+   * Count follows by user
+   */
+  static async countByUser(userId: string): Promise<number> {
+    const client = await db.connect();
+    try {
+      const result = await client.query(
+        'SELECT COUNT(*) as count FROM user_follows WHERE user_id = $1 AND unfollowed_at IS NULL',
+        [userId]
+      );
+      return parseInt(result.rows[0].count);
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Find by user and trader
+   */
+  static async findByUserAndTrader(
+    userId: string,
+    traderType: TraderType,
+    traderId: string
+  ): Promise<UserFollow | null> {
+    return this.findFollow(userId, traderType, traderId);
+  }
+
+  /**
+   * Find by user
+   */
+  static async findByUser(userId: string): Promise<UserFollow[]> {
+    const client = await db.connect();
+    try {
+      const result = await client.query(
+        'SELECT * FROM user_follows WHERE user_id = $1 ORDER BY followed_at DESC',
+        [userId]
+      );
+
+      return result.rows.map(row => new UserFollow({
+        id: row.id,
+        userId: row.user_id,
+        traderType: row.trader_type,
+        traderId: row.trader_id,
+        followedAt: row.followed_at,
+        unfollowedAt: row.unfollowed_at,
+        billingStatus: row.billing_status
+      }));
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Find all by user
+   */
+  static async findAllByUser(userId: string): Promise<UserFollow[]> {
+    return this.findByUser(userId);
+  }
+
+  /**
+   * Get users with active follows
+   */
+  static async getUsersWithActiveFollows(): Promise<string[]> {
+    const client = await db.connect();
+    try {
+      const result = await client.query(
+        `SELECT DISTINCT user_id FROM user_follows 
+         WHERE unfollowed_at IS NULL AND billing_status = 'active'`
+      );
+      return result.rows.map(row => row.user_id);
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Get popular traders
+   */
+  static async getPopularTraders(limit: number = 10): Promise<any[]> {
+    return this.getMostFollowedTraders(limit);
+  }
+
+  /**
    * Check if user is following a trader
    */
   static async isFollowing(
@@ -383,6 +465,13 @@ export class UserFollow {
     } finally {
       client.release();
     }
+  }
+
+  /**
+   * Cancel follow (alias for unfollow)
+   */
+  async cancel(): Promise<void> {
+    await this.unfollow();
   }
 
   /**

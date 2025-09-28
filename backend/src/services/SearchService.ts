@@ -125,16 +125,15 @@ export class SearchService {
       }
 
       // Search politicians
-      const { politicians, total } = await CongressionalMember.search(
-        searchCriteria,
-        validatedLimit,
-        validatedOffset
+      const politicians = await CongressionalMember.search(
+        query,
+        validatedLimit
       );
 
       return {
         items: politicians,
-        total,
-        hasMore: total > validatedOffset + politicians.length,
+        total: politicians.length,
+        hasMore: politicians.length === validatedLimit,
         query,
         type: 'politician'
       };
@@ -195,16 +194,15 @@ export class SearchService {
       }
 
       // Search stocks
-      const { stocks, total } = await StockTicker.search(
-        searchCriteria,
-        validatedLimit,
-        validatedOffset
+      const stocks = await StockTicker.search(
+        query,
+        validatedLimit
       );
 
       return {
         items: stocks,
-        total,
-        hasMore: total > validatedOffset + stocks.length,
+        total: stocks.length,
+        hasMore: stocks.length === validatedLimit,
         query,
         type: 'stock'
       };
@@ -317,9 +315,7 @@ export class SearchService {
 
     try {
       const politicians = await CongressionalMember.findByState(
-        stateCode.toUpperCase(),
-        limit,
-        offset
+        stateCode.toUpperCase()
       );
 
       return {
@@ -351,16 +347,15 @@ export class SearchService {
     const { limit = this.DEFAULT_LIMIT, offset = 0 } = options;
 
     try {
-      const { stocks, total } = await StockTicker.findBySector(
+      const stocks = await StockTicker.findBySector(
         sector,
-        limit,
-        offset
+        limit
       );
 
       return {
         items: stocks,
-        total,
-        hasMore: total > offset + stocks.length,
+        total: stocks.length,
+        hasMore: stocks.length === limit,
         query: sector,
         type: 'stock'
       };
@@ -393,7 +388,7 @@ export class SearchService {
    */
   static async getAvailableIndustries(sector?: string): Promise<string[]> {
     try {
-      return await StockTicker.getDistinctIndustries(sector);
+      return await StockTicker.getDistinctIndustries();
     } catch (error) {
       console.error('Get industries error:', error);
       return [];
@@ -405,7 +400,12 @@ export class SearchService {
    */
   static async getAvailableStates(): Promise<Array<{ code: string; name: string; count: number }>> {
     try {
-      return await CongressionalMember.getStateStatistics();
+      const stateStats = await CongressionalMember.getStateStatistics();
+      return stateStats.map(stat => ({
+        code: stat.state,
+        name: stat.state, // For now, using state code as name too
+        count: stat.count
+      }));
     } catch (error) {
       console.error('Get states error:', error);
       return [];
