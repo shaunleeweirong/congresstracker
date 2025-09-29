@@ -152,12 +152,12 @@
 - [x] **T068** Create protected route wrapper at `frontend/src/components/auth/ProtectedRoute.tsx`
 
 ### Core Components
-- [ ] **T069** [P] Create search component at `frontend/src/components/search/SearchBar.tsx` with real-time suggestions
-- [ ] **T070** [P] Create trading feed component at `frontend/src/components/trades/TradeFeed.tsx` with filtering
-- [ ] **T071** [P] Create politician profile component at `frontend/src/components/politicians/PoliticianProfile.tsx`
-- [ ] **T072** [P] Create stock profile component at `frontend/src/components/stocks/StockProfile.tsx`
-- [ ] **T073** [P] Create alert management component at `frontend/src/components/alerts/AlertManager.tsx`
-- [ ] **T074** [P] Create follow management component at `frontend/src/components/follows/FollowManager.tsx`
+- [x] **T069** [P] Create search component at `frontend/src/components/search/SearchBar.tsx` with real-time suggestions
+- [x] **T070** [P] Create trading feed component at `frontend/src/components/trades/TradeFeed.tsx` with filtering
+- [x] **T071** [P] Create politician profile component at `frontend/src/components/politicians/PoliticianProfile.tsx`
+- [x] **T072** [P] Create stock profile component at `frontend/src/components/stocks/StockProfile.tsx`
+- [x] **T073** [P] Create alert management component at `frontend/src/components/alerts/AlertManager.tsx`
+- [x] **T074** [P] Create follow management component at `frontend/src/components/follows/FollowManager.tsx`
 
 ### Pages
 - [ ] **T075** Create dashboard page at `frontend/src/app/page.tsx` with recent trades and search
