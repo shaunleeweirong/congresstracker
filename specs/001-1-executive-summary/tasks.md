@@ -160,16 +160,16 @@
 - [x] **T074** [P] Create follow management component at `frontend/src/components/follows/FollowManager.tsx`
 
 ### Pages
-- [ ] **T075** Create dashboard page at `frontend/src/app/page.tsx` with recent trades and search
-- [ ] **T076** Create politician detail page at `frontend/src/app/politician/[id]/page.tsx` with trade history
-- [ ] **T077** Create stock detail page at `frontend/src/app/stock/[symbol]/page.tsx` with all trader activity
-- [ ] **T078** Create alerts page at `frontend/src/app/alerts/page.tsx` with management interface
-- [ ] **T079** Create follows page at `frontend/src/app/follows/page.tsx` with billing information
+- [x] **T075** Create dashboard page at `frontend/src/app/page.tsx` with recent trades and search
+- [x] **T076** Create politician detail page at `frontend/src/app/politician/[id]/page.tsx` with trade history
+- [x] **T077** Create stock detail page at `frontend/src/app/stock/[symbol]/page.tsx` with all trader activity
+- [x] **T078** Create alerts page at `frontend/src/app/alerts/page.tsx` with management interface
+- [x] **T079** Create follows page at `frontend/src/app/follows/page.tsx` with billing information
 
 ### API Integration
-- [ ] **T080** Create API client at `frontend/src/lib/api.ts` with axios and authentication headers
-- [ ] **T081** Create React hooks for data fetching at `frontend/src/hooks/useApi.ts` with SWR or React Query
-- [ ] **T082** Implement error boundary at `frontend/src/components/ErrorBoundary.tsx` for error handling
+- [x] **T080** Create API client at `frontend/src/lib/api.ts` with axios and authentication headers
+- [x] **T081** Create React hooks for data fetching at `frontend/src/hooks/useApi.ts` with SWR or React Query
+- [x] **T082** Implement error boundary at `frontend/src/components/ErrorBoundary.tsx` for error handling
 
 ---
 
