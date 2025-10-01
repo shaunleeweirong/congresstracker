@@ -25,7 +25,7 @@ import {
 } from '../ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '../ui/avatar'
 import { cn } from '@/lib/utils'
-import { UserFollow, CongressionalMember, CorporateInsider, CreateFollowRequest, isCongressionalMember } from '../../../../shared/types/api'
+import { UserFollow, CongressionalMember, CorporateInsider, CreateFollowRequest, isCongressionalMember } from '@/types/api'
 
 interface FollowManagerProps {
   follows?: UserFollow[]

@@ -8,7 +8,7 @@ import { Badge } from '../ui/badge'
 import { Avatar, AvatarFallback } from '../ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
 import { cn } from '@/lib/utils'
-import { CongressionalMember, StockTrade, PortfolioHolding, UserAlert, UserFollow } from '../../../../shared/types/api'
+import { CongressionalMember, StockTrade, PortfolioHolding, UserAlert, UserFollow } from '@/types/api'
 
 interface PoliticianProfileProps {
   politician: CongressionalMember

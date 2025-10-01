@@ -7,7 +7,7 @@ import { Button } from '../ui/button'
 import { Card } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { cn } from '@/lib/utils'
-import { SearchRequest, SearchResponse, CongressionalMember, StockTicker } from '../../../../shared/types/api'
+import { SearchRequest, SearchResponse, CongressionalMember, StockTicker } from '@/types/api'
 
 interface SearchBarProps {
   onSearch?: (query: string, type?: 'politician' | 'stock' | 'all') => void

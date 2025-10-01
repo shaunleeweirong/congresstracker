@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu'
 import { cn } from '@/lib/utils'
-import { StockTrade, TradeFilters, CongressionalMember, StockTicker, isCongressionalMember } from '../../../../shared/types/api'
+import { StockTrade, TradeFilters, CongressionalMember, StockTicker, isCongressionalMember } from '@/types/api'
 
 interface TradeFeedProps {
   trades?: StockTrade[]

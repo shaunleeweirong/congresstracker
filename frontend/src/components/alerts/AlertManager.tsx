@@ -24,7 +24,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu'
 import { cn } from '@/lib/utils'
-import { UserAlert, CongressionalMember, StockTicker, CreateAlertRequest, UpdateAlertRequest } from '../../../../shared/types/api'
+import { UserAlert, CongressionalMember, StockTicker, CreateAlertRequest, UpdateAlertRequest } from '@/types/api'
 
 interface AlertManagerProps {
   alerts?: UserAlert[]
