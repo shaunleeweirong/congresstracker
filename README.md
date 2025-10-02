@@ -73,15 +73,81 @@ Democratize access to trading data from politicians and corporate executives, pr
 
 ## 🚀 Getting Started
 
+### Quick Start (Recommended)
+
+The fastest way to get started is using Docker:
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/congresstracker.git
+cd congresstracker
+
+# Run the setup script (creates databases, runs migrations, starts services)
+./scripts/setup-local.sh
+
+# Or manually with Docker Compose:
+docker compose --profile dev up
+```
+
+That's it! The application will be available at:
+- 🌐 **Frontend**: http://localhost:3000
+- 🔌 **Backend API**: http://localhost:3001
+- 📊 **API Docs**: http://localhost:3001/api/v1/docs
+
 ### Prerequisites
-- Node.js (LTS version)
-- PostgreSQL database
-- Redis instance
+
+#### Using Docker (Recommended)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) (includes Docker Compose)
+- 8GB RAM minimum
+- 10GB free disk space
+
+#### Manual Installation
+- Node.js 20+ (LTS version)
+- PostgreSQL 15+
+- Redis 7+
 - Financial Modeling Prep API key
 
-### Installation
+### Installation Options
 
-1. **Clone the repository**
+#### Option 1: Docker (Recommended)
+
+**Development Mode** (with hot-reload):
+```bash
+# Start all services in development mode
+docker compose --profile dev up
+
+# View logs
+docker compose --profile dev logs -f
+
+# Stop services
+docker compose --profile dev down
+```
+
+**Production Mode** (optimized builds):
+```bash
+# Build and start production services
+docker compose --profile prod up -d
+
+# View logs
+docker compose --profile prod logs -f
+
+# Stop services
+docker compose --profile prod down
+```
+
+**Database Only** (for local development):
+```bash
+# Start just PostgreSQL and Redis
+docker compose up -d postgres redis
+
+# Then run backend/frontend locally
+cd backend && npm run dev
+cd frontend && npm run dev
+```
+
+#### Option 2: Manual Installation
+
+1. **Clone and Setup**
    ```bash
    git clone https://github.com/yourusername/congresstracker.git
    cd congresstracker
@@ -91,43 +157,52 @@ Democratize access to trading data from politicians and corporate executives, pr
    ```bash
    cd backend
    npm install
-   
-   # Configure environment
+
+   # Create environment file
    cp .env.example .env
-   # Edit .env with your database URL, Redis URL, FMP API key, JWT secret
-   
-   # Run database migrations
-   npm run db:migrate
-   npm run db:seed
-   
+   # Edit .env with your credentials
+
    # Start development server
    npm run dev  # Runs on port 3001
    ```
-   
-   **Implementation Status**: The backend API is fully operational with:
-   - ✅ Complete database models and relationships
-   - ✅ Authentication & middleware stack (JWT, rate limiting, validation, error handling)
-   - ✅ All service layer implementations (auth, search, trading, alerts, follows, analytics)
-   - ✅ RESTful API controllers and Express routing
-   - ✅ Server infrastructure with graceful shutdown
-   - ✅ Comprehensive test coverage (contract, integration, and component tests)
 
 3. **Frontend Setup**
    ```bash
    cd frontend
    npm install
-   
-   # Configure environment  
+
+   # Create environment file
    cp .env.local.example .env.local
-   # Edit .env.local with API URL: NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
-   
+   # Edit .env.local with API URL
+
    # Start development server
    npm run dev  # Runs on port 3000
    ```
 
-4. **Access the Application**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:3001/api/v1
+4. **Database Setup**
+
+   Make sure PostgreSQL and Redis are running, then:
+   ```bash
+   # Run migrations
+   psql -U postgres -d congresstracker -f backend/migrations/001_initial_schema.sql
+
+   # Seed test data
+   psql -U postgres -d congresstracker -f backend/seeds/001_test_data.sql
+   ```
+
+### Implementation Status
+
+**✅ Completed:**
+- Complete database models and relationships
+- Authentication & middleware stack (JWT, rate limiting, validation, error handling)
+- All service layer implementations (auth, search, trading, alerts, follows, analytics)
+- RESTful API controllers and Express routing
+- Server infrastructure with graceful shutdown
+- Comprehensive test coverage (contract, integration, and component tests)
+- Frontend components and pages
+- API integration layer
+- Docker deployment setup
+- Production-ready builds
 
 ### Environment Variables
 
@@ -150,7 +225,70 @@ NEXTAUTH_SECRET=your_nextauth_secret
 NEXTAUTH_URL=http://localhost:3000
 ```
 
+## 🔧 Development Commands
+
+### Docker Commands
+```bash
+# Start development environment
+docker compose --profile dev up
+
+# Start production environment
+docker compose --profile prod up -d
+
+# View logs
+docker compose logs -f [service-name]
+
+# Restart a service
+docker compose restart [service-name]
+
+# Stop all services
+docker compose down
+
+# Clean up (remove volumes and images)
+docker compose down -v --rmi all
+
+# Shell access
+docker compose exec backend-dev sh
+docker compose exec frontend-dev sh
+docker compose exec postgres psql -U postgres -d congresstracker
+```
+
+### Local Development
+```bash
+# Backend
+cd backend
+npm install          # Install dependencies
+npm run dev          # Start development server
+npm run build        # Build for production
+npm test             # Run tests
+npm run lint         # Lint code
+npm run type-check   # TypeScript type checking
+
+# Frontend
+cd frontend
+npm install          # Install dependencies
+npm run dev          # Start development server
+npm run build        # Build for production
+npm test             # Run tests
+npm run lint         # Lint code
+npm run type-check   # TypeScript type checking
+```
+
+### Database Commands
+```bash
+# Using Docker
+docker compose exec postgres psql -U postgres -d congresstracker
+
+# Run migrations
+docker compose exec postgres psql -U postgres -d congresstracker -f /docker-entrypoint-initdb.d/migrations/001_initial_schema.sql
+
+# Access Redis
+docker compose exec redis redis-cli
+```
+
 ## 📚 API Documentation
+
+**Full API documentation**: [docs/api.md](./docs/api.md)
 
 The API follows RESTful conventions with comprehensive OpenAPI documentation:
 

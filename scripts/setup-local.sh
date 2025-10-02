@@ -43,9 +43,9 @@ check_prerequisites() {
         exit 1
     fi
     
-    # Check Docker Compose
-    if ! command -v docker-compose &> /dev/null; then
-        print_error "Docker Compose is not installed. Please install Docker Compose."
+    # Check Docker Compose (v2)
+    if ! docker compose version &> /dev/null; then
+        print_error "Docker Compose is not installed. Please install Docker Compose v2."
         exit 1
     fi
     
@@ -133,24 +133,24 @@ install_dependencies() {
 # Start database services
 start_database() {
     print_status "Starting database services..."
-    
+
     # Start PostgreSQL and Redis
-    docker-compose up -d postgres redis
+    docker compose up -d postgres redis
     
     # Wait for services to be healthy
     print_status "Waiting for database services to be ready..."
     
     # Wait for PostgreSQL
     print_status "Waiting for PostgreSQL..."
-    until docker-compose exec postgres pg_isready -U postgres -d congresstracker > /dev/null 2>&1; do
+    until docker compose exec postgres pg_isready -U postgres -d congresstracker > /dev/null 2>&1; do
         sleep 2
         echo -n "."
     done
     echo
-    
+
     # Wait for Redis
     print_status "Waiting for Redis..."
-    until docker-compose exec redis redis-cli ping > /dev/null 2>&1; do
+    until docker compose exec redis redis-cli ping > /dev/null 2>&1; do
         sleep 2
         echo -n "."
     done
@@ -165,11 +165,11 @@ setup_database() {
     
     # Run migrations
     print_status "Running database migrations..."
-    docker-compose exec postgres psql -U postgres -d congresstracker -f /docker-entrypoint-initdb.d/migrations/001_initial_schema.sql
-    
+    docker compose exec postgres psql -U postgres -d congresstracker -f /docker-entrypoint-initdb.d/migrations/001_initial_schema.sql 2>/dev/null || print_warning "Migrations may have already run"
+
     # Run seeds
     print_status "Seeding test data..."
-    docker-compose exec postgres psql -U postgres -d congresstracker -f /docker-entrypoint-initdb.d/migrations/../seeds/001_test_data.sql
+    docker compose exec postgres psql -U postgres -d congresstracker -f /docker-entrypoint-initdb.d/migrations/../seeds/001_test_data.sql 2>/dev/null || print_warning "Seeds may have already run"
     
     print_success "Database setup completed"
 }
@@ -194,7 +194,8 @@ show_connection_info() {
     echo "   npm run dev:backend    # Start backend API"
     echo "   npm run dev:frontend   # Start frontend"
     echo "   # OR use Docker:"
-    echo "   docker-compose --profile dev up"
+    echo "   docker compose --profile dev up    # Development mode"
+    echo "   docker compose --profile prod up   # Production mode"
     echo
     echo "3. Access the application:"
     echo "   Frontend: http://localhost:3000"

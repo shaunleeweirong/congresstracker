@@ -1,5 +1,5 @@
-import type { NextAuthConfig } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
+import NextAuth from 'next-auth';
+import Credentials from 'next-auth/providers/credentials';
 
 declare module 'next-auth' {
   interface Session {
@@ -23,21 +23,19 @@ declare module 'next-auth' {
   }
 }
 
-export const authConfig: NextAuthConfig = {
+export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
-    CredentialsProvider({
-      name: 'credentials',
+    Credentials({
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error('Email and password are required');
+          return null;
         }
 
         try {
-          // Call our backend API to authenticate
           const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
             method: 'POST',
             headers: {
@@ -50,8 +48,7 @@ export const authConfig: NextAuthConfig = {
           });
 
           if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Authentication failed');
+            return null;
           }
 
           const data = await response.json();
@@ -70,14 +67,13 @@ export const authConfig: NextAuthConfig = {
           return null;
         } catch (error) {
           console.error('Authentication error:', error);
-          throw new Error(error instanceof Error ? error.message : 'Authentication failed');
+          return null;
         }
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
-      // Initial sign in
       if (user) {
         token.id = user.id;
         token.email = user.email;
@@ -89,7 +85,6 @@ export const authConfig: NextAuthConfig = {
       return token;
     },
     async session({ session, token }) {
-      // Send properties to the client
       if (token) {
         session.user.id = token.id as string;
         session.user.email = token.email as string;
@@ -106,7 +101,7 @@ export const authConfig: NextAuthConfig = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 7 * 24 * 60 * 60, // 7 days
+    maxAge: 7 * 24 * 60 * 60,
   },
   secret: process.env.NEXTAUTH_SECRET,
-};
+});

@@ -204,15 +204,15 @@
 ## Phase 3.8: Local Deployment & Documentation
 
 ### Docker & Local Setup
-- [ ] **T095** Create docker-compose.yml at repository root with PostgreSQL, Redis, backend, and frontend services
-- [ ] **T096** Create Dockerfile for backend at `backend/Dockerfile` with multi-stage build
-- [ ] **T097** Create Dockerfile for frontend at `frontend/Dockerfile` with Next.js optimization
-- [ ] **T098** Create setup script at `scripts/setup-local.sh` for one-command local deployment
+- [x] **T095** Create docker-compose.yml at repository root with PostgreSQL, Redis, backend, and frontend services
+- [x] **T096** Create Dockerfile for backend at `backend/Dockerfile` with multi-stage build
+- [x] **T097** Create Dockerfile for frontend at `frontend/Dockerfile` with Next.js optimization
+- [x] **T098** Create setup script at `scripts/setup-local.sh` for one-command local deployment
 
 ### Documentation & Polish
-- [ ] **T099** [P] Create API documentation at `docs/api.md` based on implemented endpoints
-- [ ] **T100** [P] Update README.md with local setup instructions and testing guide
-- [ ] **T101** [P] Create development guide at `docs/development.md` with coding standards and workflow
+- [x] **T099** [P] Create API documentation at `docs/api.md` based on implemented endpoints
+- [x] **T100** [P] Update README.md with local setup instructions and testing guide
+- [x] **T101** [P] Create development guide at `docs/development.md` with coding standards and workflow
 
 ---
 
