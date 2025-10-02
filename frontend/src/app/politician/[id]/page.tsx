@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, MapPin, Calendar, Users, TrendingUp, TrendingDown, ExternalLink, AlertCircle, Eye } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
@@ -11,6 +12,14 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CongressionalMember, StockTrade, StockTicker } from '@/types/api'
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
 
 export default function PoliticianDetailPage() {
   const params = useParams()
@@ -237,6 +246,27 @@ export default function PoliticianDetailPage() {
   return (
     <Layout>
       <div className="space-y-6">
+        {/* Breadcrumbs */}
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/">Home</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/members">Members</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{politician.name}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+
         {/* Back Navigation */}
         <div className="flex items-center space-x-4">
           <Button

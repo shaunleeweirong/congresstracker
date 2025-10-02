@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { Building2, Menu, User, LogOut, Settings, Bell } from 'lucide-react';
@@ -157,6 +157,30 @@ function UserMenu() {
 export default function Layout({ children }: LayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
+  // Fix for Radix UI Sheet/Dialog pointer-events bug that blocks clicks
+  // See: https://github.com/radix-ui/primitives/issues/2122
+  useEffect(() => {
+    // Ensure body pointer events are never blocked
+    const resetPointerEvents = () => {
+      if (document.body.style.pointerEvents === 'none') {
+        console.warn('⚠️ Body pointer-events was set to "none", resetting to "auto"');
+        document.body.style.pointerEvents = 'auto';
+      }
+    };
+
+    // Reset immediately
+    resetPointerEvents();
+
+    // Monitor for changes (Sheet component might set it)
+    const observer = new MutationObserver(resetPointerEvents);
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['style']
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -190,7 +214,7 @@ export default function Layout({ children }: LayoutProps) {
               <UserMenu />
               
               {/* Mobile menu button */}
-              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen} modal={false}>
                 <SheetTrigger asChild>
                   <Button 
                     variant="ghost" 

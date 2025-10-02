@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Calendar, Filter, TrendingUp, TrendingDown, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
@@ -55,7 +55,6 @@ export function TradeFeed({
     limit: pageSize
   })
   const [showFiltersPanel, setShowFiltersPanel] = useState(false)
-  const [filteredTrades, setFilteredTrades] = useState<StockTrade[]>([])
 
   // Mock trades data - replace with actual API integration
   const mockTrades: StockTrade[] = [
@@ -131,7 +130,8 @@ export function TradeFeed({
   // Use mock data if no trades provided
   const displayTrades = trades.length > 0 ? trades : mockTrades
 
-  useEffect(() => {
+  // Use useMemo instead of useEffect to prevent infinite loops
+  const filteredTrades = useMemo(() => {
     let filtered = [...displayTrades]
 
     // Apply filters
@@ -145,7 +145,7 @@ export function TradeFeed({
       filtered = filtered.filter(trade => trade.transactionType === filters.transactionType)
     }
     if (filters.tickerSymbol) {
-      filtered = filtered.filter(trade => 
+      filtered = filtered.filter(trade =>
         trade.tickerSymbol.toLowerCase().includes(filters.tickerSymbol!.toLowerCase())
       )
     }
@@ -159,7 +159,7 @@ export function TradeFeed({
     // Apply sorting
     filtered.sort((a, b) => {
       let aValue: string | number | Date, bValue: string | number | Date
-      
+
       switch (filters.sortField) {
         case 'transactionDate':
           aValue = new Date(a.transactionDate)
@@ -182,8 +182,8 @@ export function TradeFeed({
       return 0
     })
 
-    setFilteredTrades(filtered)
-  }, [displayTrades, filters])
+    return filtered
+  }, [displayTrades, filters.startDate, filters.endDate, filters.transactionType, filters.tickerSymbol, filters.minValue, filters.maxValue, filters.sortField, filters.sortDirection])
 
   const handleFilterChange = (key: keyof FilterState, value: string | number | undefined) => {
     setFilters(prev => ({ ...prev, [key]: value }))

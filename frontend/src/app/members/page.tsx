@@ -1,12 +1,22 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Layout from '@/components/layout/Layout';
 import { SearchBar } from '@/components/search/SearchBar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CongressionalMember } from '@/types/api';
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 
 export default function MembersPage() {
   const router = useRouter();
@@ -74,130 +84,143 @@ export default function MembersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Congressional Members
-          </h1>
-          <p className="text-gray-600">
-            Browse and search members of Congress who have filed stock trades
-          </p>
+    <Layout>
+      {/* Breadcrumbs */}
+      <Breadcrumb className="mb-4">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/">Home</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>Congressional Members</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Congressional Members
+        </h1>
+        <p className="text-gray-600">
+          Browse and search members of Congress who have filed stock trades
+        </p>
+      </div>
+
+      {/* Search Bar */}
+      <div className="mb-6">
+        <SearchBar
+          onSearch={(query, type) => {
+            console.log('Search:', query, type);
+          }}
+          onSelectPolitician={(politician) => {
+            router.push(`/politician/${politician.id}`);
+          }}
+          onSelectStock={(stock) => {
+            router.push(`/stock/${stock.symbol}`);
+          }}
+          placeholder="Search for a congressional member..."
+          showFilters={false}
+        />
+      </div>
+
+      {/* Filters */}
+      <div className="mb-6 flex gap-4">
+        <div className="flex gap-2">
+          <Button
+            variant={filterParty === null ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilterParty(null)}
+          >
+            All Parties
+          </Button>
+          <Button
+            variant={filterParty === 'democratic' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilterParty('democratic')}
+          >
+            Democratic
+          </Button>
+          <Button
+            variant={filterParty === 'republican' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilterParty('republican')}
+          >
+            Republican
+          </Button>
         </div>
 
-        {/* Search Bar */}
-        <div className="mb-6">
-          <SearchBar
-            onSearch={(query, type) => {
-              console.log('Search:', query, type);
-            }}
-            onSelectPolitician={(politician) => {
-              router.push(`/politician/${politician.id}`);
-            }}
-            onSelectStock={(stock) => {
-              router.push(`/stock/${stock.symbol}`);
-            }}
-            placeholder="Search for a congressional member..."
-            showFilters={false}
-          />
+        <div className="flex gap-2">
+          <Button
+            variant={filterPosition === null ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilterPosition(null)}
+          >
+            All Positions
+          </Button>
+          <Button
+            variant={filterPosition === 'senator' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilterPosition('senator')}
+          >
+            Senators
+          </Button>
+          <Button
+            variant={filterPosition === 'representative' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFilterPosition('representative')}
+          >
+            Representatives
+          </Button>
         </div>
+      </div>
 
-        {/* Filters */}
-        <div className="mb-6 flex gap-4">
-          <div className="flex gap-2">
-            <Button
-              variant={filterParty === null ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilterParty(null)}
-            >
-              All Parties
-            </Button>
-            <Button
-              variant={filterParty === 'democratic' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilterParty('democratic')}
-            >
-              Democratic
-            </Button>
-            <Button
-              variant={filterParty === 'republican' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilterParty('republican')}
-            >
-              Republican
-            </Button>
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              variant={filterPosition === null ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilterPosition(null)}
-            >
-              All Positions
-            </Button>
-            <Button
-              variant={filterPosition === 'senator' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilterPosition('senator')}
-            >
-              Senators
-            </Button>
-            <Button
-              variant={filterPosition === 'representative' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilterPosition('representative')}
-            >
-              Representatives
-            </Button>
-          </div>
-        </div>
-
-        {/* Members Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredMembers.map((member) => (
-            <Card
-              key={member.id}
-              className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => router.push(`/politician/${member.id}`)}
-            >
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {member.name}
-                  </h3>
-                  <Badge className={getPartyColor(member.partyAffiliation)}>
-                    {member.partyAffiliation?.charAt(0).toUpperCase()}
-                  </Badge>
-                </div>
-                <p className="text-sm text-gray-600 mb-4">
-                  {formatMember(member)}
-                </p>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">
-                    View trading activity
-                  </span>
-                  <span className="text-blue-600">→</span>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {filteredMembers.length === 0 && (
-          <Card>
-            <CardContent className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <p className="text-gray-600">No members found</p>
-                <p className="text-sm text-gray-500 mt-1">
-                  Try adjusting your filters
-                </p>
+      {/* Members Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredMembers.map((member) => (
+          <Card
+            key={member.id}
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => router.push(`/politician/${member.id}`)}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {member.name}
+                </h3>
+                <Badge className={getPartyColor(member.partyAffiliation)}>
+                  {member.partyAffiliation?.charAt(0).toUpperCase()}
+                </Badge>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                {formatMember(member)}
+              </p>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-500">
+                  View trading activity
+                </span>
+                <span className="text-blue-600">→</span>
               </div>
             </CardContent>
           </Card>
-        )}
+        ))}
       </div>
-    </div>
+
+      {filteredMembers.length === 0 && (
+        <Card>
+          <CardContent className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <p className="text-gray-600">No members found</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Try adjusting your filters
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </Layout>
   );
 }
