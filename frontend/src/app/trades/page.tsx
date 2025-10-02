@@ -37,10 +37,10 @@ export default function TradesPage() {
 
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
           Congressional Trading Activity
         </h1>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           Track all stock trades made by members of Congress in real-time
         </p>
       </div>

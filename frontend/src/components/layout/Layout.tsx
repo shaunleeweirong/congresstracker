@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { Building2, Menu, User, LogOut, Settings, Bell } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -63,21 +64,21 @@ function NavigationItems({ mobile = false, onItemClick }: { mobile?: boolean; on
             onClick={onItemClick}
             className={`${
               mobile
-                ? 'flex flex-col items-start space-y-1 px-4 py-3 text-sm hover:bg-gray-50 rounded-lg'
-                : 'px-3 py-2 text-sm font-medium hover:text-gray-900 rounded-md transition-colors'
+                ? 'flex flex-col items-start space-y-1 px-4 py-3 text-sm hover:bg-accent rounded-lg'
+                : 'px-3 py-2 text-sm font-medium hover:text-foreground rounded-md transition-colors'
             } ${
               isActive
                 ? mobile
-                  ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
-                  : 'text-blue-600 bg-blue-50'
+                  ? 'bg-accent text-accent-foreground border-l-4 border-primary'
+                  : 'text-primary bg-accent'
                 : mobile
-                ? 'text-gray-700'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? 'text-foreground'
+                : 'text-muted-foreground hover:bg-accent'
             }`}
           >
             <span>{item.name}</span>
             {mobile && (
-              <span className="text-xs text-gray-500">{item.description}</span>
+              <span className="text-xs text-muted-foreground">{item.description}</span>
             )}
           </Link>
         );
@@ -182,9 +183,9 @@ export default function Layout({ children }: LayoutProps) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
+      <header className="sticky top-0 z-50 bg-card border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo and Brand */}
@@ -194,10 +195,10 @@ export default function Layout({ children }: LayoutProps) {
                   <Building2 className="h-5 w-5 text-white" />
                 </div>
                 <div className="hidden sm:block">
-                  <h1 className="text-xl font-bold text-gray-900">
+                  <h1 className="text-xl font-bold text-foreground">
                     CongressTracker
                   </h1>
-                  <p className="text-xs text-gray-500 -mt-1">
+                  <p className="text-xs text-muted-foreground -mt-1">
                     Trading Transparency Platform
                   </p>
                 </div>
@@ -211,8 +212,9 @@ export default function Layout({ children }: LayoutProps) {
 
             {/* User Menu and Mobile Toggle */}
             <div className="flex items-center space-x-4">
+              <ThemeToggle />
               <UserMenu />
-              
+
               {/* Mobile menu button */}
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen} modal={false}>
                 <SheetTrigger asChild>
@@ -225,15 +227,15 @@ export default function Layout({ children }: LayoutProps) {
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-80">
-                  <div className="flex items-center space-x-2 pb-6 border-b">
+                  <div className="flex items-center space-x-2 pb-6 border-b border-border">
                     <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
                       <Building2 className="h-5 w-5 text-white" />
                     </div>
                     <div>
-                      <h2 className="text-lg font-semibold text-gray-900">
+                      <h2 className="text-lg font-semibold text-foreground">
                         CongressTracker
                       </h2>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-muted-foreground">
                         Trading Transparency Platform
                       </p>
                     </div>
@@ -258,26 +260,26 @@ export default function Layout({ children }: LayoutProps) {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-16">
+      <footer className="bg-card border-t border-border mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
               <Building2 className="h-5 w-5 text-blue-600" />
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-muted-foreground">
                 © 2024 CongressTracker. Promoting transparency in government.
               </span>
             </div>
-            <div className="flex space-x-6 text-sm text-gray-600">
-              <Link href="/privacy" className="hover:text-gray-900">
+            <div className="flex space-x-6 text-sm text-muted-foreground">
+              <Link href="/privacy" className="hover:text-foreground transition-colors">
                 Privacy Policy
               </Link>
-              <Link href="/terms" className="hover:text-gray-900">
+              <Link href="/terms" className="hover:text-foreground transition-colors">
                 Terms of Service
               </Link>
-              <Link href="/about" className="hover:text-gray-900">
+              <Link href="/about" className="hover:text-foreground transition-colors">
                 About
               </Link>
-              <Link href="/contact" className="hover:text-gray-900">
+              <Link href="/contact" className="hover:text-foreground transition-colors">
                 Contact
               </Link>
             </div>

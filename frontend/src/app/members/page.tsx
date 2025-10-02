@@ -80,7 +80,7 @@ export default function MembersPage() {
   const getPartyColor = (party: string) => {
     if (party === 'democratic') return 'bg-blue-100 text-blue-800';
     if (party === 'republican') return 'bg-red-100 text-red-800';
-    return 'bg-gray-100 text-gray-800';
+    return 'bg-accent text-accent-foreground';
   };
 
   return (
@@ -102,10 +102,10 @@ export default function MembersPage() {
 
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
           Congressional Members
         </h1>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           Browse and search members of Congress who have filed stock trades
         </p>
       </div>
@@ -188,18 +188,18 @@ export default function MembersPage() {
           >
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-2">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-foreground">
                   {member.name}
                 </h3>
                 <Badge className={getPartyColor(member.partyAffiliation)}>
                   {member.partyAffiliation?.charAt(0).toUpperCase()}
                 </Badge>
               </div>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 {formatMember(member)}
               </p>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500">
+                <span className="text-muted-foreground">
                   View trading activity
                 </span>
                 <span className="text-blue-600">→</span>
@@ -213,8 +213,8 @@ export default function MembersPage() {
         <Card>
           <CardContent className="flex items-center justify-center py-12">
             <div className="text-center">
-              <p className="text-gray-600">No members found</p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-muted-foreground">No members found</p>
+              <p className="text-sm text-muted-foreground mt-1">
                 Try adjusting your filters
               </p>
             </div>

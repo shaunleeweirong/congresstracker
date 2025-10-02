@@ -135,10 +135,10 @@ export default function Dashboard() {
       <div className="space-y-8">
         {/* Header Section */}
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-bold text-foreground mb-4">
             Congressional Trading Dashboard
           </h1>
-          <p className="text-xl text-gray-600 mb-8">
+          <p className="text-xl text-muted-foreground mb-8">
             Track real-time stock trading activity from members of Congress
           </p>
           
@@ -274,12 +274,12 @@ export default function Dashboard() {
                       </div>
                       <div>
                         <div className="font-medium">{stock.symbol}</div>
-                        <div className="text-sm text-gray-500">{stock.name}</div>
+                        <div className="text-sm text-muted-foreground">{stock.name}</div>
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="font-medium">${(stock.value / 1000000).toFixed(1)}M</div>
-                      <div className="text-sm text-gray-500">{stock.trades} trades</div>
+                      <div className="text-sm text-muted-foreground">{stock.trades} trades</div>
                     </div>
                   </div>
                 ))}
@@ -315,7 +315,7 @@ export default function Dashboard() {
                     </div>
                     <div className="text-right">
                       <div className="font-medium">${(trader.value / 1000).toFixed(0)}K</div>
-                      <div className="text-sm text-gray-500">{trader.trades} trades</div>
+                      <div className="text-sm text-muted-foreground">{trader.trades} trades</div>
                     </div>
                   </div>
                 ))}
