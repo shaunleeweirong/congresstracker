@@ -5,6 +5,7 @@ import { tradeRoutes } from './trades';
 import { alertRoutes } from './alerts';
 import { followRoutes } from './follows';
 import { analyticsRoutes } from './analytics';
+import { dashboardRoutes } from './dashboard';
 
 const router = Router();
 
@@ -15,6 +16,7 @@ router.use('/trades', tradeRoutes);
 router.use('/alerts', alertRoutes);
 router.use('/follows', followRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/dashboard', dashboardRoutes);
 
 // Health check endpoint
 router.get('/health', (req, res) => {
@@ -37,7 +39,8 @@ router.get('/', (req, res) => {
       trades: '/api/v1/trades',
       alerts: '/api/v1/alerts',
       follows: '/api/v1/follows',
-      analytics: '/api/v1/analytics'
+      analytics: '/api/v1/analytics',
+      dashboard: '/api/v1/dashboard'
     },
     documentation: '/api/v1/docs'
   });

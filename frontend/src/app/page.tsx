@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { TrendingUp, TrendingDown, Users, Building2, AlertCircle, Eye, ArrowRight } from 'lucide-react'
+import { TrendingUp, AlertCircle, Eye, ArrowRight } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
 import { SearchBar } from '@/components/search/SearchBar'
 import { TradeFeed } from '@/components/trades/TradeFeed'
@@ -79,13 +79,6 @@ export default function Dashboard() {
     }
   ]
 
-  const dashboardStats = {
-    totalTrades: 1247,
-    totalMembers: 535,
-    totalValue: 45600000,
-    alertsTriggered: 23
-  }
-
   const topStocks = [
     { symbol: 'AAPL', name: 'Apple Inc.', trades: 87, value: 2400000 },
     { symbol: 'MSFT', name: 'Microsoft Corp.', trades: 65, value: 1800000 },
@@ -153,63 +146,6 @@ export default function Dashboard() {
               autoFocus={false}
             />
           </div>
-        </div>
-
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Trades</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dashboardStats.totalTrades.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">
-                +12% from last month
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Members</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dashboardStats.totalMembers}</div>
-              <p className="text-xs text-muted-foreground">
-                House & Senate combined
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Volume</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                ${(dashboardStats.totalValue / 1000000).toFixed(1)}M
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Trading volume this month
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Alerts Triggered</CardTitle>
-              <AlertCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{dashboardStats.alertsTriggered}</div>
-              <p className="text-xs text-muted-foreground">
-                In the last 24 hours
-              </p>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Main Content Grid */}

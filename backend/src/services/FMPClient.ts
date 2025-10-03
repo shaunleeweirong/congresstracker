@@ -283,11 +283,11 @@ export class FMPClient {
 
   /**
    * Get latest Senate trading data
+   * @param limit Maximum records to return (default: 250, API hard cap is 250)
    */
-  async getLatestSenateTrades(limit?: number): Promise<FMPSenateTradeResponse[]> {
+  async getLatestSenateTrades(limit: number = 250): Promise<FMPSenateTradeResponse[]> {
     try {
-      const params: any = { page: 0 };
-      if (limit) params.limit = limit;
+      const params: any = { page: 0, limit };
 
       const data = await this.makeRequest<FMPSenateTradeResponse[]>({
         method: 'GET',
@@ -304,11 +304,11 @@ export class FMPClient {
 
   /**
    * Get latest House trading data
+   * @param limit Maximum records to return (default: 250, API hard cap is 250)
    */
-  async getLatestHouseTrades(limit?: number): Promise<FMPHouseTradeResponse[]> {
+  async getLatestHouseTrades(limit: number = 250): Promise<FMPHouseTradeResponse[]> {
     try {
-      const params: any = { page: 0 };
-      if (limit) params.limit = limit;
+      const params: any = { page: 0, limit };
 
       const data = await this.makeRequest<FMPHouseTradeResponse[]>({
         method: 'GET',
@@ -415,11 +415,11 @@ export class FMPClient {
 
   /**
    * Get latest insider trading data
+   * @param limit Maximum records to return (default: 250, API hard cap is 250)
    */
-  async getLatestInsiderTrades(limit?: number): Promise<FMPInsiderTradingResponse[]> {
+  async getLatestInsiderTrades(limit: number = 250): Promise<FMPInsiderTradingResponse[]> {
     try {
-      const params: any = {};
-      if (limit) params.limit = limit;
+      const params: any = { limit };
 
       const data = await this.makeRequest<FMPInsiderTradingResponse[]>({
         method: 'GET',
