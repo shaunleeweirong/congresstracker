@@ -44,76 +44,46 @@ export function SearchBar({
   const suggestionRefs = useRef<(HTMLDivElement | null)[]>([])
   const debounceTimer = useRef<NodeJS.Timeout>()
 
-  // Mock API call - replace with actual API integration
+  // Real API call to search endpoint
   const searchSuggestions = async (searchQuery: string, type: 'all' | 'politician' | 'stock' = 'all') => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 200))
-    
-    const mockPoliticians: CongressionalMember[] = [
-      {
-        id: '1',
-        name: 'Nancy Pelosi',
-        position: 'representative',
-        stateCode: 'CA',
-        district: 12,
-        partyAffiliation: 'democratic',
-        createdAt: '2023-01-01T00:00:00Z',
-        updatedAt: '2023-01-01T00:00:00Z'
-      },
-      {
-        id: '2',
-        name: 'Chuck Schumer',
-        position: 'senator',
-        stateCode: 'NY',
-        partyAffiliation: 'democratic',
-        createdAt: '2023-01-01T00:00:00Z',
-        updatedAt: '2023-01-01T00:00:00Z'
+    try {
+      const response = await fetch(`http://localhost:3001/api/v1/search?q=${encodeURIComponent(searchQuery)}&type=${type}&limit=10`)
+
+      if (!response.ok) {
+        console.error('Search API error:', response.status)
+        return []
       }
-    ]
 
-    const mockStocks: StockTicker[] = [
-      {
-        symbol: 'AAPL',
-        companyName: 'Apple Inc.',
-        sector: 'Technology',
-        industry: 'Consumer Electronics',
-        marketCap: 3000000000000,
-        lastPrice: 195.50,
-        lastUpdated: '2023-12-01T16:00:00Z',
-        createdAt: '2023-01-01T00:00:00Z'
-      },
-      {
-        symbol: 'TSLA',
-        companyName: 'Tesla, Inc.',
-        sector: 'Consumer Cyclical',
-        industry: 'Auto Manufacturers',
-        marketCap: 800000000000,
-        lastPrice: 250.75,
-        lastUpdated: '2023-12-01T16:00:00Z',
-        createdAt: '2023-01-01T00:00:00Z'
+      const data = await response.json()
+
+      if (!data.success) {
+        console.error('Search failed:', data.error)
+        return []
       }
-    ]
 
-    const filteredPoliticians = mockPoliticians.filter(p => 
-      p.name.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    
-    const filteredStocks = mockStocks.filter(s => 
-      s.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.companyName.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+      const results: SearchSuggestion[] = []
 
-    const results: SearchSuggestion[] = []
-    
-    if (type === 'all' || type === 'politician') {
-      results.push(...filteredPoliticians.map(p => ({ type: 'politician' as const, data: p })))
+      // Add politicians to results
+      if (data.data.politicians && data.data.politicians.items && data.data.politicians.items.length > 0) {
+        results.push(...data.data.politicians.items.map((p: CongressionalMember) => ({
+          type: 'politician' as const,
+          data: p
+        })))
+      }
+
+      // Add stocks to results
+      if (data.data.stocks && data.data.stocks.items && data.data.stocks.items.length > 0) {
+        results.push(...data.data.stocks.items.map((s: StockTicker) => ({
+          type: 'stock' as const,
+          data: s
+        })))
+      }
+
+      return results
+    } catch (error) {
+      console.error('Error fetching search suggestions:', error)
+      return []
     }
-    
-    if (type === 'all' || type === 'stock') {
-      results.push(...filteredStocks.map(s => ({ type: 'stock' as const, data: s })))
-    }
-
-    return results
   }
 
   // Debounced search effect

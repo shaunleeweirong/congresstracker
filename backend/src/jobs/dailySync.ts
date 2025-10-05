@@ -14,10 +14,11 @@ export async function runDailySync(): Promise<void> {
     const syncService = new CongressionalDataService();
     const dashboardService = new DashboardService();
 
-    // Sync all congressional data (Senate + House)
+    // Sync all congressional data (Senate + House) with multi-page support
     console.log('\n📊 Syncing congressional trading data from FMP API...');
     const result = await syncService.syncAllCongressionalData({
-      limit: 250, // Use optimal limit
+      limit: 250, // API hard cap per request
+      maxPages: 10, // Fetch first 10 pages for YTD coverage (~2,500 trades)
       forceUpdate: false,
       syncInsiders: false, // Can enable this later if needed
       onProgress: (progress) => {

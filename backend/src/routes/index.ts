@@ -8,6 +8,7 @@ import { analyticsRoutes } from './analytics';
 import { dashboardRoutes } from './dashboard';
 import memberRoutes from './members';
 import stockRoutes from './stocks';
+import syncRoutes from './sync';
 
 const router = Router();
 
@@ -21,6 +22,7 @@ router.use('/alerts', alertRoutes);
 router.use('/follows', followRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/sync', syncRoutes);
 
 // Health check endpoint
 router.get('/health', (req, res) => {

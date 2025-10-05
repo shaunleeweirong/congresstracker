@@ -16,34 +16,37 @@ export interface FMPTradeData {
 }
 
 export interface FMPSenateTradeResponse {
-  senator: string;
+  symbol: string; // Stock symbol
   firstName: string;
   lastName: string;
-  office: string;
+  office: string; // Full name of the senator
+  district: string; // State code for senators (e.g., "OK", "TX")
+  owner: string; // e.g., "Self", "Joint", "Spouse"
   link: string;
-  dateReceived: string;
+  disclosureDate: string; // Date the disclosure was made
   transactionDate: string;
-  ticker: string;
   assetDescription: string;
   assetType: string;
-  type: string;
-  amount: string;
+  type: string; // "Sale", "Purchase", etc.
+  amount: string; // Amount range
   comment: string;
 }
 
 export interface FMPHouseTradeResponse {
-  representative: string;
+  symbol: string; // Stock symbol
   firstName: string;
   lastName: string;
-  office: string;
+  office: string; // Full name of the representative
+  district: string; // State code + district number (e.g., "FL02", "CA12")
+  owner: string; // e.g., "Self", "Joint", "Spouse"
   link: string;
-  dateReceived: string;
+  disclosureDate: string; // Date the disclosure was made
   transactionDate: string;
-  ticker: string;
   assetDescription: string;
   assetType: string;
-  type: string;
-  amount: string;
+  type: string; // "Sale", "Purchase", etc.
+  amount: string; // Amount range
+  capitalGainsOver200USD: string; // "True" or "False"
   comment: string;
 }
 
@@ -284,10 +287,11 @@ export class FMPClient {
   /**
    * Get latest Senate trading data
    * @param limit Maximum records to return (default: 250, API hard cap is 250)
+   * @param page Page number to fetch (default: 1, API uses 1-based indexing)
    */
-  async getLatestSenateTrades(limit: number = 250): Promise<FMPSenateTradeResponse[]> {
+  async getLatestSenateTrades(limit: number = 250, page: number = 1): Promise<FMPSenateTradeResponse[]> {
     try {
-      const params: any = { page: 0, limit };
+      const params: any = { page, limit };
 
       const data = await this.makeRequest<FMPSenateTradeResponse[]>({
         method: 'GET',
@@ -305,10 +309,11 @@ export class FMPClient {
   /**
    * Get latest House trading data
    * @param limit Maximum records to return (default: 250, API hard cap is 250)
+   * @param page Page number to fetch (default: 1, API uses 1-based indexing)
    */
-  async getLatestHouseTrades(limit: number = 250): Promise<FMPHouseTradeResponse[]> {
+  async getLatestHouseTrades(limit: number = 250, page: number = 1): Promise<FMPHouseTradeResponse[]> {
     try {
-      const params: any = { page: 0, limit };
+      const params: any = { page, limit };
 
       const data = await this.makeRequest<FMPHouseTradeResponse[]>({
         method: 'GET',
@@ -375,6 +380,76 @@ export class FMPClient {
       console.error(`Error fetching Senate trades for ${name}:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Get all Senate trades across multiple pages
+   * @param maxPages Maximum number of pages to fetch (default: 10)
+   * @param limit Records per page (default: 250, API hard cap)
+   * @returns Combined array of all trades from all pages
+   */
+  async getAllSenateTrades(maxPages: number = 10, limit: number = 250): Promise<FMPSenateTradeResponse[]> {
+    const allTrades: FMPSenateTradeResponse[] = [];
+
+    for (let page = 1; page <= maxPages; page++) {
+      try {
+        const trades = await this.getLatestSenateTrades(limit, page);
+
+        if (!trades || trades.length === 0) {
+          console.log(`No more Senate trades found at page ${page}, stopping pagination`);
+          break;
+        }
+
+        allTrades.push(...trades);
+        console.log(`Fetched page ${page}: ${trades.length} Senate trades (total: ${allTrades.length})`);
+
+        // If we got fewer than the limit, we've reached the end
+        if (trades.length < limit) {
+          console.log(`Reached end of Senate trades data at page ${page}`);
+          break;
+        }
+      } catch (error) {
+        console.error(`Error fetching Senate trades page ${page}:`, error);
+        // Continue with next page instead of failing completely
+      }
+    }
+
+    return allTrades;
+  }
+
+  /**
+   * Get all House trades across multiple pages
+   * @param maxPages Maximum number of pages to fetch (default: 10)
+   * @param limit Records per page (default: 250, API hard cap)
+   * @returns Combined array of all trades from all pages
+   */
+  async getAllHouseTrades(maxPages: number = 10, limit: number = 250): Promise<FMPHouseTradeResponse[]> {
+    const allTrades: FMPHouseTradeResponse[] = [];
+
+    for (let page = 1; page <= maxPages; page++) {
+      try {
+        const trades = await this.getLatestHouseTrades(limit, page);
+
+        if (!trades || trades.length === 0) {
+          console.log(`No more House trades found at page ${page}, stopping pagination`);
+          break;
+        }
+
+        allTrades.push(...trades);
+        console.log(`Fetched page ${page}: ${trades.length} House trades (total: ${allTrades.length})`);
+
+        // If we got fewer than the limit, we've reached the end
+        if (trades.length < limit) {
+          console.log(`Reached end of House trades data at page ${page}`);
+          break;
+        }
+      } catch (error) {
+        console.error(`Error fetching House trades page ${page}:`, error);
+        // Continue with next page instead of failing completely
+      }
+    }
+
+    return allTrades;
   }
 
   /**

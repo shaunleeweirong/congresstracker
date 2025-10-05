@@ -15,9 +15,10 @@ export interface SyncResult {
 }
 
 export interface SyncOptions {
-  limit?: number;
-  forceUpdate?: boolean;
-  syncInsiders?: boolean;
+  limit?: number; // Max records to fetch per API call (default: 250)
+  maxPages?: number; // Maximum number of pages to fetch (default: 10 for YTD coverage)
+  forceUpdate?: boolean; // Update existing records even if they haven't changed
+  syncInsiders?: boolean; // Whether to sync insider trading data
   onProgress?: (progress: { current: number; total: number; type: string }) => void;
 }
 
@@ -106,9 +107,13 @@ export class CongressionalDataService {
 
     try {
       console.log('Starting Senate trades sync...');
-      
-      const senateTrades = await this.fmpClient.getLatestSenateTrades(options.limit);
-      
+
+      const maxPages = options.maxPages || 10;
+      const limit = options.limit || 250;
+
+      console.log(`Fetching up to ${maxPages} pages of Senate trades (${limit} per page)...`);
+      const senateTrades = await this.fmpClient.getAllSenateTrades(maxPages, limit);
+
       if (!Array.isArray(senateTrades) || senateTrades.length === 0) {
         console.log('No Senate trades found from FMP API');
         return {
@@ -122,7 +127,7 @@ export class CongressionalDataService {
         };
       }
 
-      console.log(`Processing ${senateTrades.length} Senate trades...`);
+      console.log(`Processing ${senateTrades.length} Senate trades from ${maxPages} pages...`);
 
       for (let i = 0; i < senateTrades.length; i++) {
         const trade = senateTrades[i];
@@ -193,9 +198,13 @@ export class CongressionalDataService {
 
     try {
       console.log('Starting House trades sync...');
-      
-      const houseTrades = await this.fmpClient.getLatestHouseTrades(options.limit);
-      
+
+      const maxPages = options.maxPages || 10;
+      const limit = options.limit || 250;
+
+      console.log(`Fetching up to ${maxPages} pages of House trades (${limit} per page)...`);
+      const houseTrades = await this.fmpClient.getAllHouseTrades(maxPages, limit);
+
       if (!Array.isArray(houseTrades) || houseTrades.length === 0) {
         console.log('No House trades found from FMP API');
         return {
@@ -209,7 +218,7 @@ export class CongressionalDataService {
         };
       }
 
-      console.log(`Processing ${houseTrades.length} House trades...`);
+      console.log(`Processing ${houseTrades.length} House trades from ${maxPages} pages...`);
 
       for (let i = 0; i < houseTrades.length; i++) {
         const trade = houseTrades[i];
@@ -363,20 +372,22 @@ export class CongressionalDataService {
   ): Promise<{ action: 'created' | 'updated' | 'skipped'; trade?: StockTrade }> {
     try {
       // Find or create the congressional member
+      // Use office (full name) as the fullName parameter
       const member = await this.findOrCreateCongressionalMember(
-        trade.senator,
+        trade.office,
         trade.firstName,
         trade.lastName,
         'senator',
-        trade.office
+        trade.office,
+        trade.district
       );
 
       // Ensure the stock ticker exists
-      const ticker = await this.findOrCreateStockTicker(trade.ticker, trade.assetDescription);
+      const ticker = await this.findOrCreateStockTicker(trade.symbol, trade.assetDescription);
 
       // Parse dates
       const transactionDate = new Date(trade.transactionDate);
-      const filingDate = trade.dateReceived ? new Date(trade.dateReceived) : undefined;
+      const filingDate = trade.disclosureDate ? new Date(trade.disclosureDate) : undefined;
 
       // Parse transaction type
       const transactionType = this.parseTransactionType(trade.type);
@@ -388,7 +399,7 @@ export class CongressionalDataService {
       const existingTrade = await this.findExistingTrade(
         'congressional',
         member.id!,
-        trade.ticker,
+        trade.symbol,
         transactionDate,
         transactionType
       );
@@ -400,7 +411,7 @@ export class CongressionalDataService {
       const tradeData: CreateStockTradeData = {
         traderType: 'congressional',
         traderId: member.id!,
-        tickerSymbol: trade.ticker,
+        tickerSymbol: trade.symbol,
         transactionDate,
         transactionType,
         amountRange: trade.amount,
@@ -435,20 +446,22 @@ export class CongressionalDataService {
   ): Promise<{ action: 'created' | 'updated' | 'skipped'; trade?: StockTrade }> {
     try {
       // Find or create the congressional member
+      // Use office (full name) as the fullName parameter
       const member = await this.findOrCreateCongressionalMember(
-        trade.representative,
+        trade.office,
         trade.firstName,
         trade.lastName,
         'representative',
-        trade.office
+        trade.office,
+        trade.district
       );
 
       // Ensure the stock ticker exists
-      const ticker = await this.findOrCreateStockTicker(trade.ticker, trade.assetDescription);
+      const ticker = await this.findOrCreateStockTicker(trade.symbol, trade.assetDescription);
 
       // Parse dates
       const transactionDate = new Date(trade.transactionDate);
-      const filingDate = trade.dateReceived ? new Date(trade.dateReceived) : undefined;
+      const filingDate = trade.disclosureDate ? new Date(trade.disclosureDate) : undefined;
 
       // Parse transaction type
       const transactionType = this.parseTransactionType(trade.type);
@@ -460,7 +473,7 @@ export class CongressionalDataService {
       const existingTrade = await this.findExistingTrade(
         'congressional',
         member.id!,
-        trade.ticker,
+        trade.symbol,
         transactionDate,
         transactionType
       );
@@ -472,7 +485,7 @@ export class CongressionalDataService {
       const tradeData: CreateStockTradeData = {
         traderType: 'congressional',
         traderId: member.id!,
-        tickerSymbol: trade.ticker,
+        tickerSymbol: trade.symbol,
         transactionDate,
         transactionType,
         amountRange: trade.amount,
@@ -576,7 +589,8 @@ export class CongressionalDataService {
     firstName: string,
     lastName: string,
     position: 'senator' | 'representative',
-    office: string
+    office: string,
+    districtField: string
   ): Promise<CongressionalMember> {
     // Try to find existing member by name
     const existing = await CongressionalMember.findByName(fullName);
@@ -584,15 +598,20 @@ export class CongressionalDataService {
       return existing;
     }
 
-    // Extract state from office string (e.g., "TX" from "TX-01")
-    const stateMatch = office.match(/^([A-Z]{2})/);
-    const stateCode = stateMatch ? stateMatch[1] : 'XX';
-
-    // Extract district number for representatives
+    // Extract state code and district from FMP's district field
+    // For senators: district = "OK" (just state code)
+    // For representatives: district = "FL02" (state + district number)
+    let stateCode: string;
     let district: number | undefined;
-    if (position === 'representative') {
-      const districtMatch = office.match(/-(\d+)$/);
-      district = districtMatch ? parseInt(districtMatch[1]) : undefined;
+
+    if (position === 'senator') {
+      // Senators: district field contains just the state code
+      stateCode = districtField;
+    } else {
+      // Representatives: extract state (first 2 chars) and district number (remaining chars)
+      stateCode = districtField.substring(0, 2);
+      const districtNumber = districtField.substring(2);
+      district = districtNumber ? parseInt(districtNumber, 10) : undefined;
     }
 
     // Create new member

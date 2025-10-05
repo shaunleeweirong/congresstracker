@@ -115,17 +115,18 @@ export default function Dashboard() {
 
   const handleSearch = (query: string, type?: 'politician' | 'stock' | 'all') => {
     console.log('Dashboard search:', query, type)
-    // TODO: Implement search navigation
+    // Navigate to search page with query
+    // TODO: Create dedicated search page
   }
 
   const handleSelectPolitician = (politician: CongressionalMember) => {
-    console.log('Selected politician:', politician)
-    // TODO: Navigate to politician detail page
+    // Navigate to politician detail page with real ID from database
+    window.location.href = `/politician/${politician.id}`
   }
 
   const handleSelectStock = (stock: StockTicker) => {
-    console.log('Selected stock:', stock)
-    // TODO: Navigate to stock detail page
+    // Navigate to stock detail page
+    window.location.href = `/stock/${stock.symbol}`
   }
 
   const handleTradeClick = (trade: StockTrade) => {

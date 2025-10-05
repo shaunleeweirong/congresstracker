@@ -47,25 +47,33 @@ export class SearchService {
    * Unified search across politicians and stocks
    */
   static async searchAll(options: SearchOptions): Promise<UnifiedSearchResult> {
-    const { query, limit = this.DEFAULT_LIMIT, offset = 0 } = options;
-    
+    const { query, type, limit = this.DEFAULT_LIMIT, offset = 0 } = options;
+
     // Validate inputs
     const validatedLimit = Math.min(limit, this.MAX_LIMIT);
     const validatedOffset = Math.max(offset, 0);
 
     try {
-      // Search both politicians and stocks in parallel
+      // Respect the type filter - only search what's requested
+      const shouldSearchPoliticians = !type || type === 'all' || type === 'politician';
+      const shouldSearchStocks = !type || type === 'all' || type === 'stock';
+
+      // Search based on type filter
       const [politicianResults, stockResults] = await Promise.all([
-        this.searchPoliticians({
-          query,
-          limit: validatedLimit,
-          offset: validatedOffset
-        }),
-        this.searchStocks({
-          query,
-          limit: validatedLimit,
-          offset: validatedOffset
-        })
+        shouldSearchPoliticians
+          ? this.searchPoliticians({
+              query,
+              limit: validatedLimit,
+              offset: validatedOffset
+            })
+          : Promise.resolve({ items: [], total: 0, hasMore: false, query, type: 'politician' as const }),
+        shouldSearchStocks
+          ? this.searchStocks({
+              query,
+              limit: validatedLimit,
+              offset: validatedOffset
+            })
+          : Promise.resolve({ items: [], total: 0, hasMore: false, query, type: 'stock' as const })
       ]);
 
       return {
