@@ -766,30 +766,134 @@ export class StockTrade {
   ): Promise<{ trades: StockTrade[]; total: number }> {
     const client = await db.connect();
     try {
-      // This is a simplified implementation - would need full filter logic
+      // Map camelCase column names to snake_case for SQL
+      const columnMap: Record<string, string> = {
+        'transactionDate': 'transaction_date',
+        'transaction_date': 'transaction_date',
+        'filingDate': 'filing_date',
+        'filing_date': 'filing_date',
+        'estimatedValue': 'estimated_value',
+        'estimated_value': 'estimated_value',
+        'createdAt': 'created_at',
+        'created_at': 'created_at'
+      };
+
+      const dbColumnName = columnMap[sortBy] || 'transaction_date';
+
+      // Build WHERE clause from filters
+      const whereConditions: string[] = [];
+      const queryParams: any[] = [];
+      let paramCounter = 1;
+
+      if (filters.traderId) {
+        whereConditions.push(`st.trader_id = $${paramCounter++}`);
+        queryParams.push(filters.traderId);
+      }
+
+      if (filters.traderType) {
+        whereConditions.push(`st.trader_type = $${paramCounter++}`);
+        queryParams.push(filters.traderType);
+      }
+
+      if (filters.tickerSymbol) {
+        whereConditions.push(`st.ticker_symbol = $${paramCounter++}`);
+        queryParams.push(filters.tickerSymbol.toUpperCase());
+      }
+
+      if (filters.transactionType) {
+        whereConditions.push(`st.transaction_type = $${paramCounter++}`);
+        queryParams.push(filters.transactionType);
+      }
+
+      const whereClause = whereConditions.length > 0
+        ? `WHERE ${whereConditions.join(' AND ')}`
+        : '';
+
+      // Add limit and offset parameters
+      queryParams.push(limit);
+      const limitParam = `$${paramCounter++}`;
+      queryParams.push(offset);
+      const offsetParam = `$${paramCounter++}`;
+
+      // Query with JOINs to populate trader and stock data
       const result = await client.query(
-        `SELECT * FROM stock_trades ORDER BY ${sortBy} ${sortOrder.toUpperCase()} LIMIT $1 OFFSET $2`,
-        [limit, offset]
+        `SELECT
+          st.*,
+          cm.id as member_id,
+          cm.name as member_name,
+          cm.position as member_position,
+          cm.state_code as member_state_code,
+          cm.district as member_district,
+          cm.party_affiliation as member_party,
+          sk.symbol as stock_symbol,
+          sk.company_name as stock_company_name,
+          sk.sector as stock_sector,
+          sk.industry as stock_industry,
+          sk.market_cap as stock_market_cap,
+          sk.last_price as stock_last_price,
+          sk.last_updated as stock_last_updated
+        FROM stock_trades st
+        LEFT JOIN congressional_members cm ON st.trader_id = cm.id AND st.trader_type = 'congressional'
+        LEFT JOIN stock_tickers sk ON st.ticker_symbol = sk.symbol
+        ${whereClause}
+        ORDER BY st.${dbColumnName} ${sortOrder.toUpperCase()}
+        LIMIT ${limitParam} OFFSET ${offsetParam}`,
+        queryParams
       );
 
-      const countResult = await client.query('SELECT COUNT(*) FROM stock_trades');
+      // Count query with same filters
+      const countQuery = `SELECT COUNT(*) FROM stock_trades st ${whereClause}`;
+      const countParams = queryParams.slice(0, -2); // Remove limit and offset params
+      const countResult = await client.query(countQuery, countParams);
       const total = parseInt(countResult.rows[0].count);
 
-      const trades = result.rows.map(row => new StockTrade({
-        id: row.id,
-        traderType: row.trader_type,
-        traderId: row.trader_id,
-        tickerSymbol: row.ticker_symbol,
-        transactionDate: row.transaction_date,
-        transactionType: row.transaction_type,
-        amountRange: row.amount_range,
-        estimatedValue: row.estimated_value,
-        quantity: row.quantity,
-        filingDate: row.filing_date,
-        sourceData: row.source_data,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at
-      }));
+      const trades = result.rows.map(row => {
+        const trade = new StockTrade({
+          id: row.id,
+          traderType: row.trader_type,
+          traderId: row.trader_id,
+          tickerSymbol: row.ticker_symbol,
+          transactionDate: row.transaction_date,
+          transactionType: row.transaction_type,
+          amountRange: row.amount_range,
+          estimatedValue: row.estimated_value,
+          quantity: row.quantity,
+          filingDate: row.filing_date,
+          sourceData: row.source_data,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at
+        });
+
+        // Populate trader data if available
+        if (row.member_id) {
+          (trade as any).trader = {
+            id: row.member_id,
+            name: row.member_name,
+            position: row.member_position,
+            stateCode: row.member_state_code,
+            district: row.member_district,
+            partyAffiliation: row.member_party,
+            createdAt: row.created_at,
+            updatedAt: row.updated_at
+          };
+        }
+
+        // Populate stock data if available
+        if (row.stock_symbol) {
+          (trade as any).stock = {
+            symbol: row.stock_symbol,
+            companyName: row.stock_company_name,
+            sector: row.stock_sector,
+            industry: row.stock_industry,
+            marketCap: row.stock_market_cap,
+            lastPrice: row.stock_last_price,
+            lastUpdated: row.stock_last_updated,
+            createdAt: row.created_at
+          };
+        }
+
+        return trade;
+      });
 
       return { trades, total };
     } finally {
@@ -838,7 +942,7 @@ export class StockTrade {
    * Convert to JSON
    */
   toJSON(): StockTradeData {
-    return {
+    const json: any = {
       id: this.id,
       traderType: this.traderType,
       traderId: this.traderId,
@@ -853,5 +957,15 @@ export class StockTrade {
       createdAt: this.createdAt,
       updatedAt: this.updatedAt
     };
+
+    // Include trader and stock if populated
+    if ((this as any).trader) {
+      json.trader = (this as any).trader;
+    }
+    if ((this as any).stock) {
+      json.stock = (this as any).stock;
+    }
+
+    return json;
   }
 }

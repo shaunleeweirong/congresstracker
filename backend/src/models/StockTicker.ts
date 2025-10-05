@@ -308,6 +308,54 @@ export class StockTicker {
   }
 
   /**
+   * Count stock tickers with filters
+   */
+  static async count(filters: StockTickerFilters = {}): Promise<number> {
+    const client = await db.connect();
+    try {
+      let query = 'SELECT COUNT(*) FROM stock_tickers WHERE 1=1';
+      const params: any[] = [];
+      let paramCounter = 1;
+
+      // Apply same filters as findAll
+      if (filters.sector) {
+        query += ` AND sector ILIKE $${paramCounter++}`;
+        params.push(`%${filters.sector}%`);
+      }
+
+      if (filters.industry) {
+        query += ` AND industry ILIKE $${paramCounter++}`;
+        params.push(`%${filters.industry}%`);
+      }
+
+      if (filters.minMarketCap !== undefined) {
+        query += ` AND market_cap >= $${paramCounter++}`;
+        params.push(filters.minMarketCap);
+      }
+
+      if (filters.maxMarketCap !== undefined) {
+        query += ` AND market_cap <= $${paramCounter++}`;
+        params.push(filters.maxMarketCap);
+      }
+
+      if (filters.minPrice !== undefined) {
+        query += ` AND last_price >= $${paramCounter++}`;
+        params.push(filters.minPrice);
+      }
+
+      if (filters.maxPrice !== undefined) {
+        query += ` AND last_price <= $${paramCounter++}`;
+        params.push(filters.maxPrice);
+      }
+
+      const result = await client.query(query, params);
+      return parseInt(result.rows[0].count);
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
    * Get tickers by sector
    */
   static async findBySector(sector: string, limit: number = 50): Promise<StockTicker[]> {

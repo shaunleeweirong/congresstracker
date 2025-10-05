@@ -33,99 +33,44 @@ export default function StockDetailPage() {
   const [hasAlerts, setHasAlerts] = useState(false)
   const [selectedTimeframe, setSelectedTimeframe] = useState<'all' | '1y' | '6m' | '3m' | '1m'>('1y')
 
-  // Mock data - will be replaced with real API calls
+  // Fetch real data from API
   useEffect(() => {
     const fetchStockData = async () => {
       try {
         setLoading(true)
-        
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
-        // Mock stock data
-        const mockStock: StockTicker = {
-          symbol: symbol,
-          companyName: getCompanyName(symbol),
-          sector: getSector(symbol),
-          industry: getIndustry(symbol),
-          marketCap: getMarketCap(symbol),
-          lastPrice: getLastPrice(symbol),
-          lastUpdated: '2024-01-15T16:00:00Z',
-          createdAt: '2023-01-01T00:00:00Z'
+        setError(null)
+
+        // Fetch stock details
+        const stockResponse = await fetch(`http://localhost:3001/api/v1/stocks/${symbol}`)
+
+        if (!stockResponse.ok) {
+          throw new Error('Failed to fetch stock')
         }
 
-        // Mock politicians for the stock
-        const mockPoliticians: CongressionalMember[] = [
-          {
-            id: '1',
-            name: 'Nancy Pelosi',
-            position: 'representative',
-            stateCode: 'CA',
-            district: 12,
-            partyAffiliation: 'democratic',
-            createdAt: '2023-01-01T00:00:00Z',
-            updatedAt: '2023-01-01T00:00:00Z'
-          },
-          {
-            id: '2',
-            name: 'Ted Cruz',
-            position: 'senator',
-            stateCode: 'TX',
-            partyAffiliation: 'republican',
-            createdAt: '2023-01-01T00:00:00Z',
-            updatedAt: '2023-01-01T00:00:00Z'
-          }
-        ]
+        const stockData = await stockResponse.json()
+        if (!stockData.success || !stockData.data) {
+          throw new Error('Stock not found')
+        }
 
-        // Mock trades data
-        const mockTrades: StockTrade[] = [
-          {
-            id: '1',
-            traderType: 'congressional',
-            traderId: '1',
-            tickerSymbol: symbol,
-            transactionDate: '2024-01-15',
-            transactionType: 'buy',
-            amountRange: '$1,001 - $15,000',
-            estimatedValue: 8000,
-            trader: mockPoliticians[0],
-            stock: mockStock,
-            createdAt: '2024-01-15T10:30:00Z',
-            updatedAt: '2024-01-15T10:30:00Z'
-          },
-          {
-            id: '2',
-            traderType: 'congressional',
-            traderId: '2',
-            tickerSymbol: symbol,
-            transactionDate: '2024-01-10',
-            transactionType: 'sell',
-            amountRange: '$15,001 - $50,000',
-            estimatedValue: 32500,
-            trader: mockPoliticians[1],
-            stock: mockStock,
-            createdAt: '2024-01-10T14:20:00Z',
-            updatedAt: '2024-01-10T14:20:00Z'
-          },
-          {
-            id: '3',
-            traderType: 'congressional',
-            traderId: '1',
-            tickerSymbol: symbol,
-            transactionDate: '2024-01-05',
-            transactionType: 'buy',
-            amountRange: '$50,001 - $100,000',
-            estimatedValue: 75000,
-            trader: mockPoliticians[0],
-            stock: mockStock,
-            createdAt: '2024-01-05T11:45:00Z',
-            updatedAt: '2024-01-05T11:45:00Z'
-          }
-        ]
+        const stock = stockData.data
+        setStock(stock)
 
-        setStock(mockStock)
-        setTrades(mockTrades)
-        setHasAlerts(Math.random() > 0.5) // Random mock status
+        // Fetch stock's trades
+        const tradesResponse = await fetch(
+          `http://localhost:3001/api/v1/stocks/${symbol}/trades?limit=50&sortBy=transactionDate&sortOrder=desc`
+        )
+
+        if (!tradesResponse.ok) {
+          throw new Error('Failed to fetch trades')
+        }
+
+        const tradesData = await tradesResponse.json()
+        if (tradesData.success && tradesData.data.trades) {
+          setTrades(tradesData.data.trades)
+        }
+
+        // Mock alert status for now (this would come from user auth/preferences)
+        setHasAlerts(false)
       } catch (err) {
         setError('Failed to load stock data')
         console.error('Error fetching stock:', err)
@@ -138,77 +83,6 @@ export default function StockDetailPage() {
       fetchStockData()
     }
   }, [symbol])
-
-  // Helper functions for mock data
-  function getCompanyName(symbol: string): string {
-    const companies: Record<string, string> = {
-      'AAPL': 'Apple Inc.',
-      'MSFT': 'Microsoft Corporation',
-      'GOOGL': 'Alphabet Inc.',
-      'TSLA': 'Tesla, Inc.',
-      'AMZN': 'Amazon.com, Inc.',
-      'NVDA': 'NVIDIA Corporation',
-      'META': 'Meta Platforms, Inc.',
-      'NFLX': 'Netflix, Inc.'
-    }
-    return companies[symbol] || `${symbol} Company`
-  }
-
-  function getSector(symbol: string): string {
-    const sectors: Record<string, string> = {
-      'AAPL': 'Technology',
-      'MSFT': 'Technology',
-      'GOOGL': 'Technology',
-      'TSLA': 'Automotive',
-      'AMZN': 'Consumer Discretionary',
-      'NVDA': 'Technology',
-      'META': 'Technology',
-      'NFLX': 'Communication Services'
-    }
-    return sectors[symbol] || 'Technology'
-  }
-
-  function getIndustry(symbol: string): string {
-    const industries: Record<string, string> = {
-      'AAPL': 'Consumer Electronics',
-      'MSFT': 'Software',
-      'GOOGL': 'Internet Services',
-      'TSLA': 'Electric Vehicles',
-      'AMZN': 'E-commerce',
-      'NVDA': 'Semiconductors',
-      'META': 'Social Media',
-      'NFLX': 'Entertainment'
-    }
-    return industries[symbol] || 'Software'
-  }
-
-  function getMarketCap(symbol: string): number {
-    const marketCaps: Record<string, number> = {
-      'AAPL': 3000000000000,
-      'MSFT': 2800000000000,
-      'GOOGL': 1600000000000,
-      'TSLA': 800000000000,
-      'AMZN': 1500000000000,
-      'NVDA': 2200000000000,
-      'META': 900000000000,
-      'NFLX': 200000000000
-    }
-    return marketCaps[symbol] || 100000000000
-  }
-
-  function getLastPrice(symbol: string): number {
-    const prices: Record<string, number> = {
-      'AAPL': 195.50,
-      'MSFT': 418.22,
-      'GOOGL': 142.85,
-      'TSLA': 248.75,
-      'AMZN': 155.89,
-      'NVDA': 739.80,
-      'META': 502.34,
-      'NFLX': 486.73
-    }
-    return prices[symbol] || 100.00
-  }
 
   const handleAlertToggle = async (stock: StockTicker) => {
     try {
@@ -338,37 +212,45 @@ export default function StockDetailPage() {
                   {stock.companyName}
                 </h2>
                 <div className="flex items-center space-x-4 text-gray-600 mb-4">
-                  <div className="flex items-center">
-                    <Building2 className="h-4 w-4 mr-1" />
-                    <span>{stock.sector}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span>{stock.industry}</span>
-                  </div>
+                  {stock.sector && (
+                    <div className="flex items-center">
+                      <Building2 className="h-4 w-4 mr-1" />
+                      <span>{stock.sector}</span>
+                    </div>
+                  )}
+                  {stock.industry && (
+                    <div className="flex items-center">
+                      <span>{stock.industry}</span>
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-2xl font-bold text-gray-900">
-                      ${stock.lastPrice?.toFixed(2)}
-                    </span>
-                    <span 
-                      className={`flex items-center text-sm font-medium ${
-                        priceChange >= 0 ? 'text-green-600' : 'text-red-600'
-                      }`}
-                    >
-                      {priceChange >= 0 ? (
-                        <TrendingUp className="h-3 w-3 mr-1" />
-                      ) : (
-                        <TrendingDown className="h-3 w-3 mr-1" />
-                      )}
-                      {priceChange >= 0 ? '+' : ''}
-                      {priceChange.toFixed(2)} ({priceChangePercent.toFixed(2)}%)
-                    </span>
+                {stock.lastPrice && (
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-2xl font-bold text-gray-900">
+                        ${stock.lastPrice.toFixed(2)}
+                      </span>
+                      <span
+                        className={`flex items-center text-sm font-medium ${
+                          priceChange >= 0 ? 'text-green-600' : 'text-red-600'
+                        }`}
+                      >
+                        {priceChange >= 0 ? (
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                        ) : (
+                          <TrendingDown className="h-3 w-3 mr-1" />
+                        )}
+                        {priceChange >= 0 ? '+' : ''}
+                        {priceChange.toFixed(2)} ({priceChangePercent.toFixed(2)}%)
+                      </span>
+                    </div>
+                    {stock.lastUpdated && (
+                      <Badge variant="outline" className="text-xs">
+                        {new Date(stock.lastUpdated).toLocaleDateString()}
+                      </Badge>
+                    )}
                   </div>
-                  <Badge variant="outline" className="text-xs">
-                    {new Date(stock.lastUpdated).toLocaleDateString()}
-                  </Badge>
-                </div>
+                )}
               </div>
             </div>
             
@@ -486,7 +368,6 @@ export default function StockDetailPage() {
               <CardContent className="p-0">
                 <TradeFeed
                   trades={trades}
-                  onTradeClick={handleTradeClick}
                   onPoliticianClick={handlePoliticianClick}
                   showFilters={true}
                   pageSize={20}
@@ -500,7 +381,6 @@ export default function StockDetailPage() {
               stock={stock}
               hasAlerts={hasAlerts}
               onAlertToggle={handleAlertToggle}
-              onTradeClick={handleTradeClick}
               onPoliticianClick={handlePoliticianClick}
             />
           </TabsContent>

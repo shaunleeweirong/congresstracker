@@ -246,6 +246,45 @@ export class CongressionalMember {
   }
 
   /**
+   * Count congressional members with filters
+   */
+  static async count(filters: CongressionalMemberFilters = {}): Promise<number> {
+    const client = await db.connect();
+    try {
+      let query = 'SELECT COUNT(*) FROM congressional_members WHERE 1=1';
+      const params: any[] = [];
+      let paramCounter = 1;
+
+      // Apply same filters as findAll
+      if (filters.position) {
+        query += ` AND position = $${paramCounter++}`;
+        params.push(filters.position);
+      }
+
+      if (filters.stateCode) {
+        query += ` AND state_code = $${paramCounter++}`;
+        params.push(filters.stateCode.toUpperCase());
+      }
+
+      if (filters.partyAffiliation) {
+        query += ` AND party_affiliation = $${paramCounter++}`;
+        params.push(filters.partyAffiliation);
+      }
+
+      if (filters.isActive === true) {
+        query += ' AND (office_end_date IS NULL OR office_end_date > NOW())';
+      } else if (filters.isActive === false) {
+        query += ' AND office_end_date IS NOT NULL AND office_end_date <= NOW()';
+      }
+
+      const result = await client.query(query, params);
+      return parseInt(result.rows[0].count);
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
    * Search congressional members by name
    */
   static async searchByName(nameQuery: string, limit: number = 20): Promise<CongressionalMember[]> {

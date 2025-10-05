@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Layout from '@/components/layout/Layout';
@@ -22,54 +22,45 @@ export default function MembersPage() {
   const router = useRouter();
   const [filterParty, setFilterParty] = useState<string | null>(null);
   const [filterPosition, setFilterPosition] = useState<string | null>(null);
+  const [members, setMembers] = useState<CongressionalMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock members data - replace with API call
-  const mockMembers: CongressionalMember[] = [
-    {
-      id: '1',
-      name: 'Nancy Pelosi',
-      position: 'representative',
-      stateCode: 'CA',
-      district: 12,
-      partyAffiliation: 'democratic',
-      createdAt: '2023-01-01T00:00:00Z',
-      updatedAt: '2023-01-01T00:00:00Z'
-    },
-    {
-      id: '2',
-      name: 'Chuck Schumer',
-      position: 'senator',
-      stateCode: 'NY',
-      partyAffiliation: 'democratic',
-      createdAt: '2023-01-01T00:00:00Z',
-      updatedAt: '2023-01-01T00:00:00Z'
-    },
-    {
-      id: '3',
-      name: 'Ted Cruz',
-      position: 'senator',
-      stateCode: 'TX',
-      partyAffiliation: 'republican',
-      createdAt: '2023-01-01T00:00:00Z',
-      updatedAt: '2023-01-01T00:00:00Z'
-    },
-    {
-      id: '4',
-      name: 'Alexandria Ocasio-Cortez',
-      position: 'representative',
-      stateCode: 'NY',
-      district: 14,
-      partyAffiliation: 'democratic',
-      createdAt: '2023-01-01T00:00:00Z',
-      updatedAt: '2023-01-01T00:00:00Z'
-    }
-  ];
+  // Fetch members from API
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-  const filteredMembers = mockMembers.filter(member => {
-    if (filterParty && member.partyAffiliation !== filterParty) return false;
-    if (filterPosition && member.position !== filterPosition) return false;
-    return true;
-  });
+        const params: any = { limit: 100 };
+        if (filterParty) params.partyAffiliation = filterParty;
+        if (filterPosition) params.position = filterPosition;
+
+        const response = await fetch(
+          `http://localhost:3001/api/v1/members?${new URLSearchParams(params)}`
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch members');
+        }
+
+        const data = await response.json();
+        if (data.success && data.data.members) {
+          setMembers(data.data.members);
+        }
+      } catch (err: any) {
+        console.error('Error fetching members:', err);
+        setError(err.message || 'Failed to load members');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMembers();
+  }, [filterParty, filterPosition]);
+
+  const filteredMembers = members;
 
   const formatMember = (member: CongressionalMember) => {
     const position = member.position === 'senator' ? 'Senator' : 'Representative';
@@ -178,9 +169,36 @@ export default function MembersPage() {
         </div>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <Card>
+          <CardContent className="flex items-center justify-center py-12">
+            <div className="flex items-center gap-2">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted border-t-primary" />
+              <span>Loading members...</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <Card>
+          <CardContent className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <p className="text-red-500 font-medium">{error}</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Please try again later
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Members Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredMembers.map((member) => (
+      {!loading && !error && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredMembers.map((member) => (
           <Card
             key={member.id}
             className="cursor-pointer hover:shadow-md transition-shadow"
@@ -206,10 +224,12 @@ export default function MembersPage() {
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {filteredMembers.length === 0 && (
+      {/* Empty State */}
+      {!loading && !error && filteredMembers.length === 0 && (
         <Card>
           <CardContent className="flex items-center justify-center py-12">
             <div className="text-center">

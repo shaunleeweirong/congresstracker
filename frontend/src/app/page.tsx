@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { TrendingUp, AlertCircle, Eye, ArrowRight } from 'lucide-react'
+import { TrendingUp, AlertCircle, Eye, ArrowRight, Loader2 } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
 import { SearchBar } from '@/components/search/SearchBar'
 import { TradeFeed } from '@/components/trades/TradeFeed'
@@ -10,88 +10,108 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { CongressionalMember, StockTicker, StockTrade } from '../../../shared/types/api'
+import { apiClient } from '@/lib/api'
 
 export default function Dashboard() {
   const [selectedTimeframe, setSelectedTimeframe] = useState<'day' | 'week' | 'month'>('week')
+  const [recentTrades, setRecentTrades] = useState<StockTrade[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [dashboardMetrics, setDashboardMetrics] = useState<any>(null)
+  const [topStocks, setTopStocks] = useState<any[]>([])
+  const [topTraders, setTopTraders] = useState<any[]>([])
 
-  // Mock data - will be replaced with real API calls
-  const recentTrades: StockTrade[] = [
-    {
-      id: '1',
-      traderType: 'congressional',
-      traderId: '1',
-      tickerSymbol: 'AAPL',
-      transactionDate: '2024-01-15',
-      transactionType: 'buy',
-      amountRange: '$1,001 - $15,000',
-      estimatedValue: 8000,
-      trader: {
-        id: '1',
-        name: 'Nancy Pelosi',
-        position: 'representative',
-        stateCode: 'CA',
-        district: 12,
-        partyAffiliation: 'democratic',
-        createdAt: '2023-01-01T00:00:00Z',
-        updatedAt: '2023-01-01T00:00:00Z'
-      },
-      stock: {
-        symbol: 'AAPL',
-        companyName: 'Apple Inc.',
-        sector: 'Technology',
-        industry: 'Consumer Electronics',
-        lastPrice: 195.50,
-        lastUpdated: '2024-01-15T16:00:00Z',
-        createdAt: '2023-01-01T00:00:00Z'
-      },
-      createdAt: '2024-01-15T10:30:00Z',
-      updatedAt: '2024-01-15T10:30:00Z'
-    },
-    {
-      id: '2',
-      traderType: 'congressional',
-      traderId: '2',
-      tickerSymbol: 'TSLA',
-      transactionDate: '2024-01-14',
-      transactionType: 'sell',
-      amountRange: '$15,001 - $50,000',
-      estimatedValue: 32500,
-      trader: {
-        id: '2',
-        name: 'Ted Cruz',
-        position: 'senator',
-        stateCode: 'TX',
-        partyAffiliation: 'republican',
-        createdAt: '2023-01-01T00:00:00Z',
-        updatedAt: '2023-01-01T00:00:00Z'
-      },
-      stock: {
-        symbol: 'TSLA',
-        companyName: 'Tesla, Inc.',
-        sector: 'Automotive',
-        industry: 'Electric Vehicles',
-        lastPrice: 248.75,
-        lastUpdated: '2024-01-14T16:00:00Z',
-        createdAt: '2023-01-01T00:00:00Z'
-      },
-      createdAt: '2024-01-14T14:20:00Z',
-      updatedAt: '2024-01-14T14:20:00Z'
+  // Fetch real data from API
+  useEffect(() => {
+    fetchDashboardData()
+  }, [selectedTimeframe])
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      // Fetch recent trades for display
+      const tradesResponse = await apiClient.get('/trades/recent', {
+        params: {
+          limit: 10,
+          sortBy: 'transactionDate',
+          sortOrder: 'desc'
+        }
+      })
+
+      if (tradesResponse.data.success) {
+        setRecentTrades(tradesResponse.data.data.trades)
+      }
+
+      // Fetch more trades to calculate top stocks and traders
+      const allTradesResponse = await apiClient.get('/trades/recent', {
+        params: {
+          limit: 200, // Get more trades for better statistics
+          sortBy: 'transactionDate',
+          sortOrder: 'desc'
+        }
+      })
+
+      if (allTradesResponse.data.success) {
+        const trades = allTradesResponse.data.data.trades
+
+        // Calculate Top Stocks
+        const stockStats = trades.reduce((acc: any, trade: StockTrade) => {
+          const symbol = trade.tickerSymbol
+          if (!acc[symbol]) {
+            acc[symbol] = {
+              symbol,
+              name: trade.stock?.companyName || symbol,
+              trades: 0,
+              value: 0
+            }
+          }
+          acc[symbol].trades++
+          acc[symbol].value += parseFloat(trade.estimatedValue?.toString() || '0')
+          return acc
+        }, {})
+
+        const topStocksData = Object.values(stockStats)
+          .sort((a: any, b: any) => b.value - a.value)
+          .slice(0, 4)
+        setTopStocks(topStocksData)
+
+        // Calculate Top Traders
+        const traderStats = trades.reduce((acc: any, trade: StockTrade) => {
+          const traderId = trade.traderId
+          if (!acc[traderId]) {
+            acc[traderId] = {
+              name: trade.trader?.name || 'Unknown',
+              party: trade.trader?.partyAffiliation || 'Unknown',
+              trades: 0,
+              value: 0
+            }
+          }
+          acc[traderId].trades++
+          acc[traderId].value += parseFloat(trade.estimatedValue?.toString() || '0')
+          return acc
+        }, {})
+
+        const topTradersData = Object.values(traderStats)
+          .sort((a: any, b: any) => b.value - a.value)
+          .slice(0, 4)
+        setTopTraders(topTradersData)
+      }
+
+      // Fetch dashboard metrics
+      const metricsResponse = await apiClient.get('/dashboard/metrics')
+      if (metricsResponse.data.success) {
+        setDashboardMetrics(metricsResponse.data.data)
+      }
+
+    } catch (err: any) {
+      console.error('Error fetching dashboard data:', err)
+      setError(err.message || 'Failed to load dashboard data')
+    } finally {
+      setLoading(false)
     }
-  ]
-
-  const topStocks = [
-    { symbol: 'AAPL', name: 'Apple Inc.', trades: 87, value: 2400000 },
-    { symbol: 'MSFT', name: 'Microsoft Corp.', trades: 65, value: 1800000 },
-    { symbol: 'NVDA', name: 'NVIDIA Corp.', trades: 42, value: 1200000 },
-    { symbol: 'TSLA', name: 'Tesla, Inc.', trades: 38, value: 950000 }
-  ]
-
-  const topTraders = [
-    { name: 'Nancy Pelosi', party: 'Democratic', trades: 15, value: 450000 },
-    { name: 'Dan Crenshaw', party: 'Republican', trades: 12, value: 380000 },
-    { name: 'Josh Gottheimer', party: 'Democratic', trades: 11, value: 320000 },
-    { name: 'Pat Fallon', party: 'Republican', trades: 9, value: 275000 }
-  ]
+  }
 
   const handleSearch = (query: string, type?: 'politician' | 'stock' | 'all') => {
     console.log('Dashboard search:', query, type)
@@ -134,7 +154,37 @@ export default function Dashboard() {
           <p className="text-xl text-muted-foreground mb-8">
             Track real-time stock trading activity from members of Congress
           </p>
-          
+
+          {/* Dashboard Metrics */}
+          {dashboardMetrics && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 max-w-4xl mx-auto">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-2xl font-bold">{dashboardMetrics.totalTrades}</div>
+                  <div className="text-sm text-muted-foreground">Total Trades</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-2xl font-bold">{dashboardMetrics.activeMembers}</div>
+                  <div className="text-sm text-muted-foreground">Active Members</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-2xl font-bold">${(dashboardMetrics.totalVolume / 1000).toFixed(0)}K</div>
+                  <div className="text-sm text-muted-foreground">Total Volume</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-2xl font-bold">{dashboardMetrics.alertsTriggered}</div>
+                  <div className="text-sm text-muted-foreground">Alerts Triggered</div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
           {/* Search Bar */}
           <div className="max-w-2xl mx-auto">
             <SearchBar
@@ -177,14 +227,46 @@ export default function Dashboard() {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                <TradeFeed
-                  trades={recentTrades}
-                  onTradeClick={handleTradeClick}
-                  onPoliticianClick={handlePoliticianClick}
-                  onStockClick={handleStockClick}
-                  showFilters={false}
-                  pageSize={10}
-                />
+                {loading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    <span className="ml-2 text-muted-foreground">Loading trades...</span>
+                  </div>
+                ) : error ? (
+                  <div className="text-center py-12 text-red-500">
+                    <p>Error loading trades: {error}</p>
+                    <Button onClick={fetchDashboardData} variant="outline" className="mt-4">
+                      Retry
+                    </Button>
+                  </div>
+                ) : recentTrades.length > 0 ? (
+                  <div className="divide-y">
+                    {recentTrades.map((trade) => (
+                      <div key={trade.id} className="p-4 hover:bg-muted/50 transition-colors">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold text-green-600">{trade.tickerSymbol}</span>
+                              <Badge variant={trade.transactionType === 'buy' ? 'default' : 'destructive'}>
+                                {trade.transactionType.toUpperCase()}
+                              </Badge>
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              Amount: {trade.amountRange || 'N/A'}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {new Date(trade.transactionDate).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <p>No trades found</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -205,7 +287,7 @@ export default function Dashboard() {
                 {topStocks.map((stock, index) => (
                   <div key={stock.symbol} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center text-blue-600 font-semibold text-sm">
+                      <div className="w-8 h-8 rounded bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-400 font-semibold text-sm">
                         {index + 1}
                       </div>
                       <div>
@@ -214,7 +296,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-medium">${(stock.value / 1000000).toFixed(1)}M</div>
+                      <div className="font-medium">${(stock.value / 1000).toFixed(0)}K</div>
                       <div className="text-sm text-muted-foreground">{stock.trades} trades</div>
                     </div>
                   </div>
@@ -236,21 +318,21 @@ export default function Dashboard() {
                 {topTraders.map((trader, index) => (
                   <div key={trader.name} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 rounded bg-green-100 flex items-center justify-center text-green-600 font-semibold text-sm">
+                      <div className="w-8 h-8 rounded bg-green-100 dark:bg-green-900 flex items-center justify-center text-green-600 dark:text-green-400 font-semibold text-sm">
                         {index + 1}
                       </div>
                       <div>
                         <div className="font-medium">{trader.name}</div>
-                        <Badge 
-                          variant={trader.party === 'Democratic' ? 'default' : 'secondary'}
-                          className="text-xs"
+                        <Badge
+                          variant={trader.party?.toLowerCase() === 'democratic' ? 'default' : 'secondary'}
+                          className="text-xs capitalize"
                         >
                           {trader.party}
                         </Badge>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-medium">${(trader.value / 1000).toFixed(0)}K</div>
+                      <div className="font-medium">${(trader.value / 1000000).toFixed(1)}M</div>
                       <div className="text-sm text-muted-foreground">{trader.trades} trades</div>
                     </div>
                   </div>

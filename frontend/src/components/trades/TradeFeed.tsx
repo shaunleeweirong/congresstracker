@@ -16,6 +16,7 @@ import {
 } from '../ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { StockTrade, TradeFilters, CongressionalMember, StockTicker, isCongressionalMember } from '@/types/api'
+import { apiClient } from '@/lib/api'
 
 interface TradeFeedProps {
   trades?: StockTrade[]
@@ -38,12 +39,12 @@ interface FilterState extends TradeFilters {
 }
 
 export function TradeFeed({
-  trades = [],
+  trades: propTrades,
   onTradeClick,
   onPoliticianClick,
   onStockClick,
-  loading = false,
-  error,
+  loading: propLoading = false,
+  error: propError,
   className,
   showFilters = true,
   pageSize = 20
@@ -55,8 +56,45 @@ export function TradeFeed({
     limit: pageSize
   })
   const [showFiltersPanel, setShowFiltersPanel] = useState(false)
+  const [fetchedTrades, setFetchedTrades] = useState<StockTrade[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  // Mock trades data - replace with actual API integration
+  // Fetch trades from API if not provided as props
+  useEffect(() => {
+    const fetchTrades = async () => {
+      if (propTrades && propTrades.length > 0) {
+        // Use provided trades
+        return
+      }
+
+      try {
+        setLoading(true)
+        setError(null)
+
+        const response = await apiClient.get('/trades/recent', {
+          params: {
+            limit: pageSize,
+            sortBy: filters.sortField,
+            sortOrder: filters.sortDirection
+          }
+        })
+
+        if (response.data.success && response.data.data.trades) {
+          setFetchedTrades(response.data.data.trades)
+        }
+      } catch (err: any) {
+        console.error('Error fetching trades:', err)
+        setError(err.message || 'Failed to load trades')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTrades()
+  }, [propTrades, pageSize, filters.sortField, filters.sortDirection])
+
+  // Mock trades data - only used as fallback if API fetch fails
   const mockTrades: StockTrade[] = [
     {
       id: '1',
@@ -127,8 +165,12 @@ export function TradeFeed({
     }
   ]
 
-  // Use mock data if no trades provided
-  const displayTrades = trades.length > 0 ? trades : mockTrades
+  // Use provided trades, fetched trades, or mock data as fallback
+  const displayTrades = propTrades && propTrades.length > 0
+    ? propTrades
+    : fetchedTrades.length > 0
+      ? fetchedTrades
+      : mockTrades
 
   // Use useMemo instead of useEffect to prevent infinite loops
   const filteredTrades = useMemo(() => {
@@ -372,12 +414,23 @@ export function TradeFeed({
       )}
 
       <div className="space-y-3">
-        {loading ? (
+        {(loading || propLoading) ? (
           <Card>
             <CardContent className="flex items-center justify-center py-8">
               <div className="flex items-center gap-2">
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted border-t-primary" />
                 <span>Loading trades...</span>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (error || propError) ? (
+          <Card>
+            <CardContent className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <p className="text-red-500 font-medium">{error || propError}</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Please try again later
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -394,10 +447,9 @@ export function TradeFeed({
           </Card>
         ) : (
           filteredTrades.map((trade) => (
-            <Card 
-              key={trade.id} 
-              className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => onTradeClick?.(trade)}
+            <Card
+              key={trade.id}
+              className="hover:shadow-md transition-shadow"
             >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-4">
@@ -411,32 +463,36 @@ export function TradeFeed({
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            if (isCongressionalMember(trade.trader)) {
+                            if (trade.trader && isCongressionalMember(trade.trader)) {
                               onPoliticianClick?.(trade.trader)
                             }
                           }}
                           className="font-medium text-blue-600 hover:underline"
                         >
-                          {isCongressionalMember(trade.trader) 
-                            ? formatPolitician(trade.trader)
-                            : trade.trader.name
+                          {trade.trader
+                            ? (isCongressionalMember(trade.trader)
+                                ? formatPolitician(trade.trader)
+                                : trade.trader.name)
+                            : 'Unknown Trader'
                           }
                         </button>
                         {getTransactionBadge(trade.transactionType)}
                       </div>
-                      
+
                       <div className="flex items-center gap-2 mb-2">
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            onStockClick?.(trade.stock)
+                            if (trade.stock) {
+                              onStockClick?.(trade.stock)
+                            }
                           }}
                           className="text-lg font-semibold text-green-600 hover:underline"
                         >
-                          {trade.stock.symbol}
+                          {trade.stock?.symbol || trade.tickerSymbol || 'N/A'}
                         </button>
                         <span className="text-muted-foreground">
-                          {trade.stock.companyName}
+                          {trade.stock?.companyName || 'Unknown Company'}
                         </span>
                         <ExternalLink className="h-3 w-3 text-muted-foreground" />
                       </div>
@@ -460,7 +516,7 @@ export function TradeFeed({
                     </div>
                   </div>
                   
-                  <div className="text-right flex-shrink-0">
+                  <div className="text-right flex-shrink-0 flex flex-col items-end gap-2">
                     {trade.estimatedValue && (
                       <div className="text-lg font-semibold">
                         {formatCurrency(trade.estimatedValue)}
@@ -469,6 +525,20 @@ export function TradeFeed({
                     <div className="text-xs text-muted-foreground">
                       Filed: {formatDate(trade.filingDate || trade.transactionDate)}
                     </div>
+                    {(trade as any).sourceData?.originalData?.link && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          window.open((trade as any).sourceData.originalData.link, '_blank')
+                        }}
+                        className="text-xs"
+                      >
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        View Filing
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>

@@ -34,102 +34,45 @@ export default function PoliticianDetailPage() {
   const [hasAlerts, setHasAlerts] = useState(false)
   const [selectedTimeframe, setSelectedTimeframe] = useState<'all' | '1y' | '6m' | '3m' | '1m'>('1y')
 
-  // Mock data - will be replaced with real API calls
+  // Fetch real data from API
   useEffect(() => {
     const fetchPoliticianData = async () => {
       try {
         setLoading(true)
-        
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
-        // Mock politician data
-        const mockPolitician: CongressionalMember = {
-          id: politicianId,
-          name: 'Nancy Pelosi',
-          position: 'representative',
-          stateCode: 'CA',
-          district: 12,
-          partyAffiliation: 'democratic',
-          officeStartDate: '2007-01-04',
-          createdAt: '2023-01-01T00:00:00Z',
-          updatedAt: '2023-01-01T00:00:00Z'
+        setError(null)
+
+        // Fetch politician details
+        const memberResponse = await fetch(`http://localhost:3001/api/v1/members/${politicianId}`)
+
+        if (!memberResponse.ok) {
+          throw new Error('Failed to fetch politician')
         }
 
-        // Mock trades data
-        const mockTrades: StockTrade[] = [
-          {
-            id: '1',
-            traderType: 'congressional',
-            traderId: politicianId,
-            tickerSymbol: 'AAPL',
-            transactionDate: '2024-01-15',
-            transactionType: 'buy',
-            amountRange: '$1,001 - $15,000',
-            estimatedValue: 8000,
-            trader: mockPolitician,
-            stock: {
-              symbol: 'AAPL',
-              companyName: 'Apple Inc.',
-              sector: 'Technology',
-              industry: 'Consumer Electronics',
-              lastPrice: 195.50,
-              lastUpdated: '2024-01-15T16:00:00Z',
-              createdAt: '2023-01-01T00:00:00Z'
-            },
-            createdAt: '2024-01-15T10:30:00Z',
-            updatedAt: '2024-01-15T10:30:00Z'
-          },
-          {
-            id: '2',
-            traderType: 'congressional',
-            traderId: politicianId,
-            tickerSymbol: 'MSFT',
-            transactionDate: '2024-01-10',
-            transactionType: 'sell',
-            amountRange: '$15,001 - $50,000',
-            estimatedValue: 32500,
-            trader: mockPolitician,
-            stock: {
-              symbol: 'MSFT',
-              companyName: 'Microsoft Corporation',
-              sector: 'Technology',
-              industry: 'Software',
-              lastPrice: 418.22,
-              lastUpdated: '2024-01-10T16:00:00Z',
-              createdAt: '2023-01-01T00:00:00Z'
-            },
-            createdAt: '2024-01-10T14:20:00Z',
-            updatedAt: '2024-01-10T14:20:00Z'
-          },
-          {
-            id: '3',
-            traderType: 'congressional',
-            traderId: politicianId,
-            tickerSymbol: 'NVDA',
-            transactionDate: '2024-01-05',
-            transactionType: 'buy',
-            amountRange: '$50,001 - $100,000',
-            estimatedValue: 75000,
-            trader: mockPolitician,
-            stock: {
-              symbol: 'NVDA',
-              companyName: 'NVIDIA Corporation',
-              sector: 'Technology',
-              industry: 'Semiconductors',
-              lastPrice: 739.80,
-              lastUpdated: '2024-01-05T16:00:00Z',
-              createdAt: '2023-01-01T00:00:00Z'
-            },
-            createdAt: '2024-01-05T11:45:00Z',
-            updatedAt: '2024-01-05T11:45:00Z'
-          }
-        ]
+        const memberData = await memberResponse.json()
+        if (!memberData.success || !memberData.data) {
+          throw new Error('Politician not found')
+        }
 
-        setPolitician(mockPolitician)
-        setTrades(mockTrades)
-        setIsFollowing(Math.random() > 0.5) // Random mock status
-        setHasAlerts(Math.random() > 0.5) // Random mock status
+        const politician = memberData.data
+        setPolitician(politician)
+
+        // Fetch politician's trades
+        const tradesResponse = await fetch(
+          `http://localhost:3001/api/v1/members/${politicianId}/trades?limit=50&sortBy=transactionDate&sortOrder=desc`
+        )
+
+        if (!tradesResponse.ok) {
+          throw new Error('Failed to fetch trades')
+        }
+
+        const tradesData = await tradesResponse.json()
+        if (tradesData.success && tradesData.data.trades) {
+          setTrades(tradesData.data.trades)
+        }
+
+        // Mock follow/alert status for now (these would come from user auth/preferences)
+        setIsFollowing(false)
+        setHasAlerts(false)
       } catch (err) {
         setError('Failed to load politician data')
         console.error('Error fetching politician:', err)
@@ -443,7 +386,6 @@ export default function PoliticianDetailPage() {
               <CardContent className="p-0">
                 <TradeFeed
                   trades={trades}
-                  onTradeClick={handleTradeClick}
                   onStockClick={(stock) => handleStockClick(stock.symbol)}
                   showFilters={true}
                   pageSize={20}
@@ -459,7 +401,6 @@ export default function PoliticianDetailPage() {
               hasAlerts={hasAlerts}
               onFollowToggle={handleFollowToggle}
               onAlertToggle={handleAlertToggle}
-              onTradeClick={handleTradeClick}
               onStockClick={handleStockClick}
             />
           </TabsContent>

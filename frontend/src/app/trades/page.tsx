@@ -64,9 +64,6 @@ export default function TradesPage() {
 
       {/* Trade Feed */}
       <TradeFeed
-        onTradeClick={(trade) => {
-          console.log('Trade clicked:', trade);
-          }}
         onPoliticianClick={(politician) => {
           router.push(`/politician/${politician.id}`);
         }}

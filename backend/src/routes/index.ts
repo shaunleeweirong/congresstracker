@@ -6,6 +6,8 @@ import { alertRoutes } from './alerts';
 import { followRoutes } from './follows';
 import { analyticsRoutes } from './analytics';
 import { dashboardRoutes } from './dashboard';
+import memberRoutes from './members';
+import stockRoutes from './stocks';
 
 const router = Router();
 
@@ -13,6 +15,8 @@ const router = Router();
 router.use('/auth', authRoutes);
 router.use('/search', searchRoutes);
 router.use('/trades', tradeRoutes);
+router.use('/members', memberRoutes);
+router.use('/stocks', stockRoutes);
 router.use('/alerts', alertRoutes);
 router.use('/follows', followRoutes);
 router.use('/analytics', analyticsRoutes);
@@ -37,6 +41,8 @@ router.get('/', (req, res) => {
       auth: '/api/v1/auth',
       search: '/api/v1/search',
       trades: '/api/v1/trades',
+      members: '/api/v1/members',
+      stocks: '/api/v1/stocks',
       alerts: '/api/v1/alerts',
       follows: '/api/v1/follows',
       analytics: '/api/v1/analytics',
