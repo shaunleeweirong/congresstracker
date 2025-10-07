@@ -18,7 +18,9 @@ export async function runDailySync(): Promise<void> {
     console.log('\n📊 Syncing congressional trading data from FMP API...');
     const result = await syncService.syncAllCongressionalData({
       limit: 250, // API hard cap per request
-      maxPages: 10, // Fetch first 10 pages for YTD coverage (~2,500 trades)
+      maxPages: 10, // DAILY SYNC: 10 pages = last 2-3 months (catches new trades)
+                    // Initial 100-page backfill completed on 2025-10-07
+                    // ~2,500 trades total, ~2-3 min sync time
       forceUpdate: false,
       syncInsiders: false, // Can enable this later if needed
       onProgress: (progress) => {
