@@ -47,7 +47,7 @@ export function TradeFeed({
   error: propError,
   className,
   showFilters = true,
-  pageSize = 20
+  pageSize = 50
 }: TradeFeedProps) {
   const [filters, setFilters] = useState<FilterState>({
     sortField: 'transactionDate',
@@ -59,6 +59,8 @@ export function TradeFeed({
   const [fetchedTrades, setFetchedTrades] = useState<StockTrade[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [totalTrades, setTotalTrades] = useState(0)
+  const [hasMoreTrades, setHasMoreTrades] = useState(true)
 
   // Fetch trades from API if not provided as props
   useEffect(() => {
@@ -72,16 +74,23 @@ export function TradeFeed({
         setLoading(true)
         setError(null)
 
-        const response = await apiClient.get('/trades/recent', {
+        const response = await apiClient.get('/trades', {
           params: {
             limit: pageSize,
+            offset: 0,
             sortBy: filters.sortField,
-            sortOrder: filters.sortDirection
+            sortOrder: filters.sortDirection,
+            startDate: filters.startDate,
+            endDate: filters.endDate,
+            transactionType: filters.transactionType,
+            tickerSymbol: filters.tickerSymbol
           }
         })
 
         if (response.data.success && response.data.data.trades) {
           setFetchedTrades(response.data.data.trades)
+          setTotalTrades(response.data.data.total || 0)
+          setHasMoreTrades(response.data.data.hasMore || false)
         }
       } catch (err: any) {
         console.error('Error fetching trades:', err)
@@ -92,7 +101,7 @@ export function TradeFeed({
     }
 
     fetchTrades()
-  }, [propTrades, pageSize, filters.sortField, filters.sortDirection])
+  }, [propTrades, pageSize, filters.sortField, filters.sortDirection, filters.startDate, filters.endDate, filters.transactionType, filters.tickerSymbol])
 
   // Mock trades data - only used as fallback if API fetch fails
   const mockTrades: StockTrade[] = [
@@ -547,11 +556,46 @@ export function TradeFeed({
         )}
       </div>
 
-      {filteredTrades.length > 0 && (
-        <div className="flex justify-center pt-4">
-          <Button variant="outline">
-            Load More Trades
+      {filteredTrades.length > 0 && hasMoreTrades && (
+        <div className="flex flex-col items-center gap-2 pt-4">
+          <Button
+            variant="outline"
+            onClick={async () => {
+              try {
+                setLoading(true)
+                const currentOffset = fetchedTrades.length
+
+                const response = await apiClient.get('/trades', {
+                  params: {
+                    limit: pageSize,
+                    offset: currentOffset,
+                    sortBy: filters.sortField,
+                    sortOrder: filters.sortDirection,
+                    startDate: filters.startDate,
+                    endDate: filters.endDate,
+                    transactionType: filters.transactionType,
+                    tickerSymbol: filters.tickerSymbol
+                  }
+                })
+
+                if (response.data.success && response.data.data.trades) {
+                  setFetchedTrades(prev => [...prev, ...response.data.data.trades])
+                  setHasMoreTrades(response.data.data.hasMore || false)
+                }
+              } catch (err: any) {
+                console.error('Error loading more trades:', err)
+                setError(err.message || 'Failed to load more trades')
+              } finally {
+                setLoading(false)
+              }
+            }}
+            disabled={loading}
+          >
+            {loading ? 'Loading...' : 'Load More Trades'}
           </Button>
+          <p className="text-sm text-muted-foreground">
+            Showing {fetchedTrades.length} of {totalTrades.toLocaleString()} trades
+          </p>
         </div>
       )}
     </div>
