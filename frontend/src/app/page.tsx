@@ -14,9 +14,9 @@ import { CongressionalMember, StockTicker, StockTrade } from '../../../shared/ty
 import { apiClient } from '@/lib/api'
 
 export default function Dashboard() {
-  // Initialize date range to last 30 days
+  // Initialize date range to last 60 days (congressional trades have ~45 day reporting delay)
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: new Date(new Date().setDate(new Date().getDate() - 30)),
+    from: new Date(new Date().setDate(new Date().getDate() - 60)),
     to: new Date()
   })
   const [recentTrades, setRecentTrades] = useState<StockTrade[]>([])
@@ -253,7 +253,13 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="text-center py-12 text-muted-foreground">
-                    <p>No trades found</p>
+                    <p>No trades found for the selected date range</p>
+                    <p className="text-sm mt-2">
+                      {dateRange.from.toLocaleDateString()} - {dateRange.to.toLocaleDateString()}
+                    </p>
+                    <p className="text-xs mt-2">
+                      Try selecting a different date range or check back later for new filings.
+                    </p>
                   </div>
                 )}
               </CardContent>

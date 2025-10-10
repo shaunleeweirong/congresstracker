@@ -805,6 +805,26 @@ export class StockTrade {
         queryParams.push(filters.transactionType);
       }
 
+      if (filters.startDate) {
+        whereConditions.push(`st.transaction_date >= $${paramCounter++}`);
+        queryParams.push(filters.startDate);
+      }
+
+      if (filters.endDate) {
+        whereConditions.push(`st.transaction_date <= $${paramCounter++}`);
+        queryParams.push(filters.endDate);
+      }
+
+      if (filters.minValue !== undefined) {
+        whereConditions.push(`st.estimated_value >= $${paramCounter++}`);
+        queryParams.push(filters.minValue);
+      }
+
+      if (filters.maxValue !== undefined) {
+        whereConditions.push(`st.estimated_value <= $${paramCounter++}`);
+        queryParams.push(filters.maxValue);
+      }
+
       const whereClause = whereConditions.length > 0
         ? `WHERE ${whereConditions.join(' AND ')}`
         : '';
@@ -926,16 +946,85 @@ export class StockTrade {
    * Get top traded stocks
    */
   static async getTopTradedStocks(startDate: Date, limit: number): Promise<any[]> {
-    // Simplified implementation
-    return [];
+    const client = await db.connect();
+    try {
+      const query = `
+        SELECT
+          st.ticker_symbol,
+          COUNT(*)::int as trade_count,
+          SUM(COALESCE(st.estimated_value, 0))::numeric as total_value,
+          json_build_object(
+            'symbol', s.symbol,
+            'companyName', s.company_name,
+            'sector', s.sector,
+            'industry', s.industry,
+            'marketCap', s.market_cap,
+            'lastPrice', s.last_price
+          ) as stock
+        FROM stock_trades st
+        JOIN stock_tickers s ON st.ticker_symbol = s.symbol
+        WHERE st.transaction_date >= $1
+        GROUP BY st.ticker_symbol, s.symbol, s.company_name, s.sector, s.industry, s.market_cap, s.last_price
+        ORDER BY total_value DESC
+        LIMIT $2
+      `;
+
+      const result = await client.query(query, [startDate, limit]);
+
+      return result.rows.map(row => ({
+        stock: row.stock,
+        tradeCount: row.trade_count,
+        totalValue: parseFloat(row.total_value)
+      }));
+    } catch (error) {
+      console.error('Error in getTopTradedStocks:', error);
+      return [];
+    } finally {
+      client.release();
+    }
   }
 
   /**
    * Get most active traders
    */
   static async getMostActiveTraders(startDate: Date, limit: number): Promise<any[]> {
-    // Simplified implementation
-    return [];
+    const client = await db.connect();
+    try {
+      const query = `
+        SELECT
+          st.trader_id,
+          COUNT(*)::int as trade_count,
+          SUM(COALESCE(st.estimated_value, 0))::numeric as total_value,
+          json_build_object(
+            'id', cm.id,
+            'name', cm.name,
+            'partyAffiliation', cm.party_affiliation,
+            'position', cm.position,
+            'state', cm.state_code,
+            'district', cm.district
+          ) as trader
+        FROM stock_trades st
+        JOIN congressional_members cm ON st.trader_id = cm.id
+        WHERE st.transaction_date >= $1
+          AND st.trader_type = 'congressional'
+        GROUP BY st.trader_id, cm.id, cm.name, cm.party_affiliation, cm.position, cm.state_code, cm.district
+        ORDER BY total_value DESC
+        LIMIT $2
+      `;
+
+      const result = await client.query(query, [startDate, limit]);
+
+      return result.rows.map(row => ({
+        trader: row.trader,
+        tradeCount: row.trade_count,
+        totalValue: parseFloat(row.total_value)
+      }));
+    } catch (error) {
+      console.error('Error in getMostActiveTraders:', error);
+      return [];
+    } finally {
+      client.release();
+    }
   }
 
   /**
