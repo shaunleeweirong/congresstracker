@@ -9,11 +9,16 @@ import { TradeFeed } from '@/components/trades/TradeFeed'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { DateRangePicker } from '@/components/ui/date-range-picker'
 import { CongressionalMember, StockTicker, StockTrade } from '../../../shared/types/api'
 import { apiClient } from '@/lib/api'
 
 export default function Dashboard() {
-  const [selectedTimeframe, setSelectedTimeframe] = useState<'day' | 'week' | 'month'>('week')
+  // Initialize date range to last 30 days
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+    from: new Date(new Date().setDate(new Date().getDate() - 30)),
+    to: new Date()
+  })
   const [recentTrades, setRecentTrades] = useState<StockTrade[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -24,16 +29,18 @@ export default function Dashboard() {
   // Fetch real data from API
   useEffect(() => {
     fetchDashboardData()
-  }, [selectedTimeframe])
+  }, [dateRange])
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true)
       setError(null)
 
-      // Fetch recent trades for display
-      const tradesResponse = await apiClient.get('/trades/recent', {
+      // Fetch recent trades for display using date range
+      const tradesResponse = await apiClient.get('/trades', {
         params: {
+          startDate: dateRange.from.toISOString(),
+          endDate: dateRange.to.toISOString(),
           limit: 10,
           sortBy: 'transactionDate',
           sortOrder: 'desc'
@@ -44,58 +51,44 @@ export default function Dashboard() {
         setRecentTrades(tradesResponse.data.data.trades)
       }
 
-      // Fetch more trades to calculate top stocks and traders
-      const allTradesResponse = await apiClient.get('/trades/recent', {
+      // Fetch top stocks using date range
+      const topStocksResponse = await apiClient.get('/trades/top-stocks', {
         params: {
-          limit: 200, // Get more trades for better statistics
-          sortBy: 'transactionDate',
-          sortOrder: 'desc'
+          startDate: dateRange.from.toISOString(),
+          endDate: dateRange.to.toISOString(),
+          limit: 4
         }
       })
 
-      if (allTradesResponse.data.success) {
-        const trades = allTradesResponse.data.data.trades
-
-        // Calculate Top Stocks
-        const stockStats = trades.reduce((acc: any, trade: StockTrade) => {
-          const symbol = trade.tickerSymbol
-          if (!acc[symbol]) {
-            acc[symbol] = {
-              symbol,
-              name: trade.stock?.companyName || symbol,
-              trades: 0,
-              value: 0
-            }
-          }
-          acc[symbol].trades++
-          acc[symbol].value += parseFloat(trade.estimatedValue?.toString() || '0')
-          return acc
-        }, {})
-
-        const topStocksData = Object.values(stockStats)
-          .sort((a: any, b: any) => b.value - a.value)
-          .slice(0, 4)
+      if (topStocksResponse.data.success) {
+        // Map backend response to frontend format
+        const topStocksData = topStocksResponse.data.data.map((item: any) => ({
+          symbol: item.stock.symbol,
+          name: item.stock.companyName || item.stock.symbol,
+          trades: item.tradeCount,
+          value: item.totalValue
+        }))
         setTopStocks(topStocksData)
+      }
 
-        // Calculate Top Traders
-        const traderStats = trades.reduce((acc: any, trade: StockTrade) => {
-          const traderId = trade.traderId
-          if (!acc[traderId]) {
-            acc[traderId] = {
-              name: trade.trader?.name || 'Unknown',
-              party: trade.trader?.partyAffiliation || 'Unknown',
-              trades: 0,
-              value: 0
-            }
-          }
-          acc[traderId].trades++
-          acc[traderId].value += parseFloat(trade.estimatedValue?.toString() || '0')
-          return acc
-        }, {})
+      // Fetch most active traders using date range
+      const topTradersResponse = await apiClient.get('/trades/active-traders', {
+        params: {
+          startDate: dateRange.from.toISOString(),
+          endDate: dateRange.to.toISOString(),
+          limit: 4
+        }
+      })
 
-        const topTradersData = Object.values(traderStats)
-          .sort((a: any, b: any) => b.value - a.value)
-          .slice(0, 4)
+      if (topTradersResponse.data.success) {
+        // Map backend response to frontend format
+        const topTradersData = topTradersResponse.data.data.map((item: any) => ({
+          id: item.trader.id,
+          name: item.trader.name,
+          party: item.trader.partyAffiliation || 'Unknown',
+          trades: item.tradeCount,
+          value: item.totalValue
+        }))
         setTopTraders(topTradersData)
       }
 
@@ -207,19 +200,10 @@ export default function Dashboard() {
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-xl">Recent Trading Activity</CardTitle>
                 <div className="flex items-center space-x-2">
-                  <div className="flex rounded-md border">
-                    {(['day', 'week', 'month'] as const).map((timeframe) => (
-                      <Button
-                        key={timeframe}
-                        variant={selectedTimeframe === timeframe ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setSelectedTimeframe(timeframe)}
-                        className="rounded-none first:rounded-l-md last:rounded-r-md"
-                      >
-                        {timeframe.charAt(0).toUpperCase() + timeframe.slice(1)}
-                      </Button>
-                    ))}
-                  </div>
+                  <DateRangePicker
+                    dateRange={dateRange}
+                    onChange={setDateRange}
+                  />
                   <Link href="/trades">
                     <Button variant="outline" size="sm">
                       View All <ArrowRight className="h-3 w-3 ml-1" />
@@ -247,7 +231,11 @@ export default function Dashboard() {
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold text-green-600">{trade.tickerSymbol}</span>
+                              <Link href={`/stock/${trade.tickerSymbol}`}>
+                                <span className="font-semibold text-green-600 hover:underline cursor-pointer">
+                                  {trade.tickerSymbol}
+                                </span>
+                              </Link>
                               <Badge variant={trade.transactionType === 'buy' ? 'default' : 'destructive'}>
                                 {trade.transactionType.toUpperCase()}
                               </Badge>
@@ -286,21 +274,27 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {topStocks.map((stock, index) => (
-                  <div key={stock.symbol} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 rounded bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-400 font-semibold text-sm">
-                        {index + 1}
+                  <Link
+                    key={stock.symbol}
+                    href={`/stock/${stock.symbol}`}
+                    className="block hover:bg-muted/50 transition-colors rounded-lg p-2 -m-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 rounded bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-400 font-semibold text-sm">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <div className="font-medium">{stock.symbol}</div>
+                          <div className="text-sm text-muted-foreground">{stock.name}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-medium">{stock.symbol}</div>
-                        <div className="text-sm text-muted-foreground">{stock.name}</div>
+                      <div className="text-right">
+                        <div className="font-medium">${(stock.value / 1000).toFixed(0)}K</div>
+                        <div className="text-sm text-muted-foreground">{stock.trades} trades</div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-medium">${(stock.value / 1000).toFixed(0)}K</div>
-                      <div className="text-sm text-muted-foreground">{stock.trades} trades</div>
-                    </div>
-                  </div>
+                  </Link>
                 ))}
               </CardContent>
             </Card>
@@ -317,26 +311,32 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {topTraders.map((trader, index) => (
-                  <div key={trader.name} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 rounded bg-green-100 dark:bg-green-900 flex items-center justify-center text-green-600 dark:text-green-400 font-semibold text-sm">
-                        {index + 1}
+                  <Link
+                    key={trader.id}
+                    href={`/politician/${trader.id}`}
+                    className="block hover:bg-muted/50 transition-colors rounded-lg p-2 -m-2"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 rounded bg-green-100 dark:bg-green-900 flex items-center justify-center text-green-600 dark:text-green-400 font-semibold text-sm">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <div className="font-medium">{trader.name}</div>
+                          <Badge
+                            variant={trader.party?.toLowerCase() === 'democratic' ? 'default' : 'secondary'}
+                            className="text-xs capitalize"
+                          >
+                            {trader.party}
+                          </Badge>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-medium">{trader.name}</div>
-                        <Badge
-                          variant={trader.party?.toLowerCase() === 'democratic' ? 'default' : 'secondary'}
-                          className="text-xs capitalize"
-                        >
-                          {trader.party}
-                        </Badge>
+                      <div className="text-right">
+                        <div className="font-medium">${(trader.value / 1000000).toFixed(1)}M</div>
+                        <div className="text-sm text-muted-foreground">{trader.trades} trades</div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-medium">${(trader.value / 1000000).toFixed(1)}M</div>
-                      <div className="text-sm text-muted-foreground">{trader.trades} trades</div>
-                    </div>
-                  </div>
+                  </Link>
                 ))}
               </CardContent>
             </Card>

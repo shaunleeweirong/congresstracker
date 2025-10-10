@@ -199,13 +199,11 @@ export class TradeService {
    * Get top traded stocks by volume
    */
   static async getTopTradedStocks(
-    timeframe: 'day' | 'week' | 'month' | 'quarter' | 'year' = 'month',
+    startDate: Date,
     limit: number = 20
   ): Promise<Array<{ stock: StockTicker; tradeCount: number; totalValue: number }>> {
     try {
       const validatedLimit = Math.min(limit, 100);
-      const startDate = this.getTimeframeStartDate(timeframe);
-
       return await StockTrade.getTopTradedStocks(startDate, validatedLimit);
     } catch (error) {
       console.error('Get top traded stocks error:', error);
@@ -217,13 +215,11 @@ export class TradeService {
    * Get most active traders by volume
    */
   static async getMostActiveTraders(
-    timeframe: 'day' | 'week' | 'month' | 'quarter' | 'year' = 'month',
+    startDate: Date,
     limit: number = 20
   ): Promise<Array<{ trader: CongressionalMember; tradeCount: number; totalValue: number }>> {
     try {
       const validatedLimit = Math.min(limit, 100);
-      const startDate = this.getTimeframeStartDate(timeframe);
-
       return await StockTrade.getMostActiveTraders(startDate, validatedLimit);
     } catch (error) {
       console.error('Get most active traders error:', error);
@@ -422,7 +418,7 @@ export class TradeService {
   /**
    * Get start date for timeframe
    */
-  private static getTimeframeStartDate(timeframe: string): Date {
+  public static getTimeframeStartDate(timeframe: string): Date {
     const now = new Date();
     const startDate = new Date(now);
 
