@@ -352,7 +352,7 @@ export function TradeFeed({
           
           {showFiltersPanel && (
             <CardContent className="border-t pt-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                 <div>
                   <label className="text-sm font-medium mb-1 block">Start Date</label>
                   <Input
@@ -461,8 +461,8 @@ export function TradeFeed({
               className="hover:shadow-md transition-shadow"
             >
               <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3 flex-1">
+                <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-4">
+                  <div className="flex items-start gap-3 flex-1 w-full sm:w-auto">
                     <div className="flex-shrink-0 mt-0.5">
                       {getTransactionIcon(trade.transactionType)}
                     </div>
@@ -525,7 +525,7 @@ export function TradeFeed({
                     </div>
                   </div>
                   
-                  <div className="text-right flex-shrink-0 flex flex-col items-end gap-2">
+                  <div className="w-full sm:w-auto sm:text-right flex-shrink-0 flex flex-col sm:items-end gap-2">
                     {trade.estimatedValue && (
                       <div className="text-lg font-semibold">
                         {formatCurrency(trade.estimatedValue)}
@@ -542,7 +542,7 @@ export function TradeFeed({
                           e.stopPropagation()
                           window.open((trade as any).sourceData.originalData.link, '_blank')
                         }}
-                        className="text-xs"
+                        className="text-xs h-10 sm:h-8 w-full sm:w-auto"
                       >
                         <ExternalLink className="h-3 w-3 mr-1" />
                         View Filing
@@ -560,6 +560,7 @@ export function TradeFeed({
         <div className="flex flex-col items-center gap-2 pt-4">
           <Button
             variant="outline"
+            className="h-10 sm:h-auto w-full sm:w-auto"
             onClick={async () => {
               try {
                 setLoading(true)

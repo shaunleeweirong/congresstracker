@@ -197,11 +197,12 @@ export function SearchBar({
     <div className={cn("relative w-full max-w-2xl", className)}>
       <div className="flex flex-col gap-2">
         {showFilters && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant={searchType === 'all' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setSearchType('all')}
+              className="h-10 sm:h-8 flex-1 sm:flex-initial"
             >
               All
             </Button>
@@ -209,6 +210,7 @@ export function SearchBar({
               variant={searchType === 'politician' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setSearchType('politician')}
+              className="h-10 sm:h-8 flex-1 sm:flex-initial"
             >
               Politicians
             </Button>
@@ -216,6 +218,7 @@ export function SearchBar({
               variant={searchType === 'stock' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setSearchType('stock')}
+              className="h-10 sm:h-8 flex-1 sm:flex-initial"
             >
               Stocks
             </Button>
@@ -283,7 +286,7 @@ export function SearchBar({
                     key={`${suggestion.type}-${suggestion.data.id || (suggestion.data as StockTicker).symbol}`}
                     ref={el => suggestionRefs.current[index] = el}
                     className={cn(
-                      "flex cursor-pointer items-center gap-3 border-b p-3 last:border-b-0 hover:bg-muted/50",
+                      "flex cursor-pointer items-center gap-3 border-b p-4 sm:p-3 last:border-b-0 hover:bg-muted/50 min-h-[44px]",
                       selectedIndex === index && "bg-muted"
                     )}
                     onClick={() => handleSelectSuggestion(suggestion)}

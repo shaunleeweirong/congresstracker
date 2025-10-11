@@ -126,17 +126,18 @@ export default function StocksPage() {
       </div>
 
       {/* Stats */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4">
         <div className="text-sm text-muted-foreground">
           Showing {filteredStocks.length} of {total} stocks
         </div>
         {totalPages > 1 && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto justify-center sm:justify-end">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
+              className="h-10 sm:h-8"
             >
               Previous
             </Button>
@@ -148,6 +149,7 @@ export default function StocksPage() {
               size="sm"
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
+              className="h-10 sm:h-8"
             >
               Next
             </Button>
@@ -257,6 +259,7 @@ export default function StocksPage() {
               size="sm"
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
+              className="h-10 sm:h-8"
             >
               Previous
             </Button>
@@ -268,6 +271,7 @@ export default function StocksPage() {
               size="sm"
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
+              className="h-10 sm:h-8"
             >
               Next
             </Button>

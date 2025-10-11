@@ -142,16 +142,16 @@ export default function Dashboard() {
       <div className="space-y-8">
         {/* Header Section */}
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-foreground mb-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-4">
             Congressional Trading Dashboard
           </h1>
-          <p className="text-xl text-muted-foreground mb-8">
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-8">
             Track real-time stock trading activity from members of Congress
           </p>
 
           {/* Dashboard Metrics */}
           {dashboardMetrics && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8 max-w-4xl mx-auto">
               <Card>
                 <CardContent className="pt-6">
                   <div className="text-2xl font-bold">{dashboardMetrics.totalTrades}</div>
@@ -197,15 +197,15 @@ export default function Dashboard() {
           {/* Recent Trades Feed - Takes up 2 columns */}
           <div className="lg:col-span-2">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <CardTitle className="text-xl">Recent Trading Activity</CardTitle>
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <DateRangePicker
                     dateRange={dateRange}
                     onChange={setDateRange}
                   />
                   <Link href="/trades">
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="whitespace-nowrap h-10 sm:h-8">
                       View All <ArrowRight className="h-3 w-3 ml-1" />
                     </Button>
                   </Link>

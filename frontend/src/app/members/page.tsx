@@ -119,12 +119,13 @@ export default function MembersPage() {
       </div>
 
       {/* Filters */}
-      <div className="mb-6 flex gap-4">
-        <div className="flex gap-2">
+      <div className="mb-6 flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant={filterParty === null ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilterParty(null)}
+            className="h-10 sm:h-8 flex-1 sm:flex-initial"
           >
             All Parties
           </Button>
@@ -132,6 +133,7 @@ export default function MembersPage() {
             variant={filterParty === 'democratic' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilterParty('democratic')}
+            className="h-10 sm:h-8 flex-1 sm:flex-initial"
           >
             Democratic
           </Button>
@@ -139,16 +141,18 @@ export default function MembersPage() {
             variant={filterParty === 'republican' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilterParty('republican')}
+            className="h-10 sm:h-8 flex-1 sm:flex-initial"
           >
             Republican
           </Button>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant={filterPosition === null ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilterPosition(null)}
+            className="h-10 sm:h-8 flex-1 sm:flex-initial"
           >
             All Positions
           </Button>
@@ -156,6 +160,7 @@ export default function MembersPage() {
             variant={filterPosition === 'senator' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilterPosition('senator')}
+            className="h-10 sm:h-8 flex-1 sm:flex-initial"
           >
             Senators
           </Button>
@@ -163,6 +168,7 @@ export default function MembersPage() {
             variant={filterPosition === 'representative' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setFilterPosition('representative')}
+            className="h-10 sm:h-8 flex-1 sm:flex-initial"
           >
             Representatives
           </Button>

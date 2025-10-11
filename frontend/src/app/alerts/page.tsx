@@ -238,14 +238,14 @@ export default function AlertsPage() {
     <Layout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Alert Management</h1>
-            <p className="text-gray-600 mt-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Alert Management</h1>
+            <p className="text-gray-600 mt-2 text-sm sm:text-base">
               Monitor congressional trading activity with custom alerts
             </p>
           </div>
-          <Button onClick={() => setShowCreateAlert(true)}>
+          <Button onClick={() => setShowCreateAlert(true)} className="h-10 sm:h-auto w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Create Alert
           </Button>
@@ -308,7 +308,7 @@ export default function AlertsPage() {
 
         {/* Main Content */}
         <Tabs defaultValue="all" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
             <TabsTrigger value="all">All Alerts</TabsTrigger>
             <TabsTrigger value="active">Active</TabsTrigger>
             <TabsTrigger value="paused">Paused</TabsTrigger>
@@ -362,8 +362,8 @@ export default function AlertsPage() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge 
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge
                           variant={alert.alertStatus === 'active' ? 'default' : 'secondary'}
                           className="capitalize"
                         >
@@ -381,12 +381,14 @@ export default function AlertsPage() {
                               alertStatus: alert.alertStatus === 'active' ? 'paused' : 'active'
                             })
                           }}
+                          className="h-10 sm:h-8"
                         >
                           <Edit className="h-3 w-3" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
+                          className="h-10 sm:h-8"
                           onClick={(e) => {
                             e.stopPropagation()
                             handleDeleteAlert(alert.id)

@@ -227,16 +227,16 @@ export default function PoliticianDetailPage() {
 
         {/* Politician Header */}
         <div className="bg-white rounded-lg border p-6">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start space-x-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+          <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-4">
+            <div className="flex items-start gap-4 w-full sm:w-auto">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
                 {politician.name.split(' ').map(n => n[0]).join('')}
               </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <div className="flex-1">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                   {politician.name}
                 </h1>
-                <div className="flex items-center space-x-4 text-gray-600 mb-4">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-gray-600 mb-4 text-sm sm:text-base">
                   <div className="flex items-center">
                     <Users className="h-4 w-4 mr-1" />
                     <span className="capitalize">
@@ -260,7 +260,7 @@ export default function PoliticianDetailPage() {
                   )}
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Badge 
+                  <Badge
                     variant={politician.partyAffiliation === 'democratic' ? 'default' : 'secondary'}
                     className="capitalize"
                   >
@@ -269,13 +269,14 @@ export default function PoliticianDetailPage() {
                 </div>
               </div>
             </div>
-            
+
             {/* Action Buttons */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <Button
                 variant={hasAlerts ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => handleAlertToggle(politician)}
+                className="h-10 sm:h-8 flex-1 sm:flex-initial"
               >
                 <AlertCircle className="h-4 w-4 mr-2" />
                 {hasAlerts ? 'Alert Active' : 'Set Alert'}
@@ -284,6 +285,7 @@ export default function PoliticianDetailPage() {
                 variant={isFollowing ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => handleFollowToggle(politician)}
+                className="h-10 sm:h-8 flex-1 sm:flex-initial"
               >
                 <Eye className="h-4 w-4 mr-2" />
                 {isFollowing ? 'Following' : 'Follow'}
@@ -357,7 +359,7 @@ export default function PoliticianDetailPage() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="trades" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
             <TabsTrigger value="trades">Trading Activity</TabsTrigger>
             <TabsTrigger value="profile">Profile Details</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
@@ -365,17 +367,17 @@ export default function PoliticianDetailPage() {
 
           <TabsContent value="trades" className="space-y-4">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <CardTitle>Trading History</CardTitle>
-                <div className="flex items-center space-x-2">
-                  <div className="flex rounded-md border">
+                <div className="flex items-center justify-center sm:justify-end">
+                  <div className="flex rounded-md border w-full sm:w-auto">
                     {(['all', '1y', '6m', '3m', '1m'] as const).map((timeframe) => (
                       <Button
                         key={timeframe}
                         variant={selectedTimeframe === timeframe ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setSelectedTimeframe(timeframe)}
-                        className="rounded-none first:rounded-l-md last:rounded-r-md"
+                        className="rounded-none first:rounded-l-md last:rounded-r-md h-10 sm:h-8 flex-1 sm:flex-initial"
                       >
                         {timeframe === 'all' ? 'All' : timeframe.toUpperCase()}
                       </Button>

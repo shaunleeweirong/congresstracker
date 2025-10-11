@@ -337,7 +337,7 @@ export default function FollowsPage() {
 
         {/* Main Content */}
         <Tabs defaultValue="active" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
             <TabsTrigger value="active">Active ({followStats.activeFollows})</TabsTrigger>
             <TabsTrigger value="all">All Follows ({followStats.totalFollows})</TabsTrigger>
             <TabsTrigger value="cancelled">Cancelled ({followStats.cancelledFollows})</TabsTrigger>
