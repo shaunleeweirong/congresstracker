@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Building2, TrendingUp, TrendingDown, AlertCircle, ExternalLink, Users, DollarSign } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
-import { StockProfile } from '@/components/stocks/StockProfile'
 import { TradeFeed } from '@/components/trades/TradeFeed'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -28,6 +27,7 @@ export default function StockDetailPage() {
 
   const [stock, setStock] = useState<StockTicker | null>(null)
   const [trades, setTrades] = useState<StockTrade[]>([])
+  const [totalTrades, setTotalTrades] = useState<number>(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [hasAlerts, setHasAlerts] = useState(false)
@@ -55,9 +55,9 @@ export default function StockDetailPage() {
         const stock = stockData.data
         setStock(stock)
 
-        // Fetch stock's trades
+        // Fetch stock's trades - increase limit to get all trades like politician page does
         const tradesResponse = await fetch(
-          `http://localhost:3001/api/v1/stocks/${symbol}/trades?limit=50&sortBy=transactionDate&sortOrder=desc`
+          `http://localhost:3001/api/v1/stocks/${symbol}/trades?limit=5000&sortBy=transactionDate&sortOrder=desc`
         )
 
         if (!tradesResponse.ok) {
@@ -65,8 +65,10 @@ export default function StockDetailPage() {
         }
 
         const tradesData = await tradesResponse.json()
-        if (tradesData.success && tradesData.data.trades) {
-          setTrades(tradesData.data.trades)
+        if (tradesData.success && tradesData.data) {
+          setTrades(tradesData.data.trades || [])
+          // Store the total count from API for accurate statistics
+          setTotalTrades(tradesData.data.total || tradesData.data.trades?.length || 0)
         }
 
         // Mock alert status for now (this would come from user auth/preferences)
@@ -119,19 +121,19 @@ export default function StockDetailPage() {
     const totalValue = trades.reduce((sum, trade) => sum + (trade.estimatedValue || 0), 0)
     const buyTrades = trades.filter(t => t.transactionType === 'buy').length
     const sellTrades = trades.filter(t => t.transactionType === 'sell').length
-    
+
     // Count unique traders
     const uniqueTraderIds = new Set(trades.map(t => t.traderId))
 
     return {
       totalValue,
-      totalTrades: trades.length,
+      totalTrades: totalTrades, // Use the stored total from API instead of trades.length
       buyTrades,
       sellTrades,
       uniqueTraders: uniqueTraderIds.size,
-      avgTradeValue: totalValue / trades.length
+      avgTradeValue: totalTrades > 0 ? totalValue / totalTrades : 0
     }
-  }, [trades])
+  }, [trades, totalTrades])
 
   if (loading) {
     return (
@@ -341,9 +343,8 @@ export default function StockDetailPage() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="trades" className="w-full">
-          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2">
             <TabsTrigger value="trades">Congressional Trades</TabsTrigger>
-            <TabsTrigger value="profile">Stock Details</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
@@ -376,15 +377,6 @@ export default function StockDetailPage() {
                 />
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="profile" className="space-y-4">
-            <StockProfile
-              stock={stock}
-              hasAlerts={hasAlerts}
-              onAlertToggle={handleAlertToggle}
-              onPoliticianClick={handlePoliticianClick}
-            />
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-4">
