@@ -5,13 +5,12 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, MapPin, Calendar, Users, TrendingUp, TrendingDown, ExternalLink, AlertCircle, Eye } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
-import { PoliticianProfile } from '@/components/politicians/PoliticianProfile'
 import { TradeFeed } from '@/components/trades/TradeFeed'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { CongressionalMember, StockTrade, StockTicker } from '@/types/api'
+import { CongressionalMember, StockTrade, StockTicker, PortfolioHolding } from '@/types/api'
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -28,6 +27,7 @@ export default function PoliticianDetailPage() {
 
   const [politician, setPolitician] = useState<CongressionalMember | null>(null)
   const [trades, setTrades] = useState<StockTrade[]>([])
+  const [portfolio, setPortfolio] = useState<PortfolioHolding[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isFollowing, setIsFollowing] = useState(false)
@@ -56,9 +56,9 @@ export default function PoliticianDetailPage() {
         const politician = memberData.data
         setPolitician(politician)
 
-        // Fetch politician's trades
+        // Fetch politician's trades (fetch all for accurate statistics)
         const tradesResponse = await fetch(
-          `http://localhost:3001/api/v1/members/${politicianId}/trades?limit=50&sortBy=transactionDate&sortOrder=desc`
+          `http://localhost:3001/api/v1/members/${politicianId}/trades?limit=5000&sortBy=transactionDate&sortOrder=desc`
         )
 
         if (!tradesResponse.ok) {
@@ -68,6 +68,32 @@ export default function PoliticianDetailPage() {
         const tradesData = await tradesResponse.json()
         if (tradesData.success && tradesData.data.trades) {
           setTrades(tradesData.data.trades)
+        }
+
+        // Fetch portfolio concentration data
+        try {
+          const portfolioResponse = await fetch(
+            `http://localhost:3001/api/v1/analytics/portfolio/${politicianId}?timeframe=all`
+          )
+
+          if (portfolioResponse.ok) {
+            const portfolioData = await portfolioResponse.json()
+            if (portfolioData.success && portfolioData.data) {
+              // Convert API format to PortfolioHolding format
+              const holdings: PortfolioHolding[] = portfolioData.data.topHoldings.map((holding: any) => ({
+                tickerSymbol: holding.symbol,
+                companyName: holding.companyName,
+                netPositionValue: holding.value,
+                positionPercentage: holding.percentage,
+                transactionCount: holding.positionCount,
+                latestTransaction: holding.latestTransactionDate || new Date().toISOString()
+              }))
+              setPortfolio(holdings)
+            }
+          }
+        } catch (portfolioErr) {
+          console.error('Error fetching portfolio:', portfolioErr)
+          // Portfolio is optional, don't fail the whole page
         }
 
         // Mock follow/alert status for now (these would come from user auth/preferences)
@@ -128,7 +154,7 @@ export default function PoliticianDetailPage() {
       }
     }
 
-    const totalValue = trades.reduce((sum, trade) => sum + (trade.estimatedValue || 0), 0)
+    const totalValue = trades.reduce((sum, trade) => sum + (parseFloat(trade.estimatedValue as any) || 0), 0)
     const buyTrades = trades.filter(t => t.transactionType === 'buy').length
     const sellTrades = trades.filter(t => t.transactionType === 'sell').length
     
@@ -360,8 +386,8 @@ export default function PoliticianDetailPage() {
         {/* Main Content Tabs */}
         <Tabs defaultValue="trades" className="w-full">
           <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
-            <TabsTrigger value="trades">Trading Activity</TabsTrigger>
-            <TabsTrigger value="profile">Profile Details</TabsTrigger>
+            <TabsTrigger value="trades">Trades</TabsTrigger>
+            <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
@@ -396,15 +422,85 @@ export default function PoliticianDetailPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="profile" className="space-y-4">
-            <PoliticianProfile
-              politician={politician}
-              isFollowing={isFollowing}
-              hasAlerts={hasAlerts}
-              onFollowToggle={handleFollowToggle}
-              onAlertToggle={handleAlertToggle}
-              onStockClick={handleStockClick}
-            />
+          <TabsContent value="portfolio" className="space-y-4">
+            {/* Clarification Text */}
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex gap-3">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="text-sm">
+                    <p className="font-medium text-blue-900 mb-1">About Portfolio Concentration</p>
+                    <p className="text-blue-800">
+                      This shows <strong>net trading activity</strong> (total buys minus total sells) grouped by stock, not current portfolio holdings.
+                      Negative values indicate the politician sold more than they bought.
+                      Congressional disclosures only report transactions, not actual holdings.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {portfolio.length === 0 ? (
+              <Card>
+                <CardContent className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <p className="text-muted-foreground">No portfolio data available</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Portfolio concentration will be calculated from disclosed transactions
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {portfolio.map((holding) => (
+                  <Card key={holding.tickerSymbol}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <TrendingUp className="h-5 w-5 text-muted-foreground" />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleStockClick(holding.tickerSymbol)}
+                                className="font-semibold hover:underline text-lg"
+                              >
+                                {holding.tickerSymbol}
+                              </button>
+                              <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {holding.companyName}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {holding.transactionCount} transaction{holding.transactionCount !== 1 ? 's' : ''}
+                              {' • '}
+                              Last: {new Date(holding.latestTransaction).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-lg">
+                            ${(holding.netPositionValue / 1000).toFixed(1)}K
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {holding.positionPercentage.toFixed(1)}% of activity
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-4">

@@ -138,7 +138,7 @@ export function PoliticianProfile({
   useEffect(() => {
     // Calculate trading statistics
     const totalTrades = displayTrades.length
-    const totalValue = displayTrades.reduce((sum, trade) => sum + (trade.estimatedValue || 0), 0)
+    const totalValue = displayTrades.reduce((sum, trade) => sum + (parseFloat(trade.estimatedValue as any) || 0), 0)
     const buyCount = displayTrades.filter(trade => trade.transactionType === 'buy').length
     const sellCount = displayTrades.filter(trade => trade.transactionType === 'sell').length
     const avgTradeValue = totalTrades > 0 ? totalValue / totalTrades : 0
@@ -339,7 +339,7 @@ export function PoliticianProfile({
       <Tabs defaultValue="trades" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="trades">Recent Trades</TabsTrigger>
-          <TabsTrigger value="portfolio">Portfolio Holdings</TabsTrigger>
+          <TabsTrigger value="portfolio">Trading Activity</TabsTrigger>
         </TabsList>
         
         <TabsContent value="trades" className="space-y-4">
@@ -415,13 +415,34 @@ export function PoliticianProfile({
         </TabsContent>
         
         <TabsContent value="portfolio" className="space-y-4">
+          {/* Clarification Text */}
+          <Card className="bg-blue-50 border-blue-200">
+            <CardContent className="p-4">
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 mt-0.5">
+                  <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="text-sm">
+                  <p className="font-medium text-blue-900 mb-1">About Trading Activity</p>
+                  <p className="text-blue-800">
+                    This shows <strong>net trading activity</strong> (total buys minus total sells), not current portfolio holdings.
+                    Negative values indicate the politician sold more than they bought.
+                    Congressional disclosures only report transactions, not actual holdings.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {displayPortfolio.length === 0 ? (
             <Card>
               <CardContent className="flex items-center justify-center py-8">
                 <div className="text-center">
-                  <p className="text-muted-foreground">No portfolio data available</p>
+                  <p className="text-muted-foreground">No trading activity data available</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Portfolio concentration will be calculated from trades
+                    Trading activity will be calculated from disclosed transactions
                   </p>
                 </div>
               </CardContent>
@@ -459,7 +480,7 @@ export function PoliticianProfile({
                           {formatCurrency(holding.netPositionValue)}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {holding.positionPercentage.toFixed(1)}% of portfolio
+                          {holding.positionPercentage.toFixed(1)}% of activity
                         </div>
                       </div>
                     </div>

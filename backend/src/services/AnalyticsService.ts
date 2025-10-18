@@ -126,16 +126,18 @@ export class AnalyticsService {
       // Calculate current positions (net holdings)
       const positions = this.calculateNetPositions(trades);
       const totalValue = positions.reduce((sum, pos) => sum + pos.value, 0);
+      const totalAbsoluteValue = positions.reduce((sum, pos) => sum + Math.abs(pos.value), 0);
 
       // Calculate top holdings
       const topHoldings = await this.enrichHoldings(
-        positions.slice(0, 10).map(pos => ({
+        positions.slice(0, 20).map(pos => ({
           symbol: pos.symbol,
           companyName: pos.companyName || pos.symbol,
           value: pos.value,
-          percentage: (pos.value / totalValue) * 100,
+          percentage: totalAbsoluteValue > 0 ? (Math.abs(pos.value) / totalAbsoluteValue) * 100 : 0,
           positionCount: pos.transactionCount,
-          sector: pos.sector || 'Unknown'
+          sector: pos.sector || 'Unknown',
+          latestTransactionDate: pos.latestTransactionDate
         }))
       );
 
@@ -349,11 +351,17 @@ export class AnalyticsService {
     timeframe: string
   ): Promise<StockTrade[]> {
     const startDate = timeframe === 'all' ? null : this.getTimeframeStartDate(timeframe);
-    
+
     if (startDate) {
       return await StockTrade.findByTraderAndDateRange(traderId, startDate, new Date());
     } else {
-      return await StockTrade.findByTrader(traderId);
+      // Fetch all trades for this congressional member
+      const { trades } = await StockTrade.findWithFilters(
+        { traderId, traderType: 'congressional' },
+        10000, // high limit to get all trades
+        0
+      );
+      return trades;
     }
   }
 
@@ -367,6 +375,7 @@ export class AnalyticsService {
     value: number;
     shares: number;
     transactionCount: number;
+    latestTransactionDate?: string;
   }> {
     const positions = new Map();
 
@@ -376,13 +385,28 @@ export class AnalyticsService {
         symbol: trade.tickerSymbol,
         value: 0,
         shares: 0,
-        transactionCount: 0
+        transactionCount: 0,
+        latestTransactionDate: trade.transactionDate
       };
 
-      const multiplier = trade.transactionType === 'buy' ? 1 : -1;
-      existing.value += (trade.estimatedValue || 0) * multiplier;
+      // Handle different transaction types
+      let multiplier = 0;
+      if (trade.transactionType === 'buy' || trade.transactionType === 'purchase') {
+        multiplier = 1;  // Add to position
+      } else if (trade.transactionType === 'sell' || trade.transactionType === 'sale') {
+        multiplier = -1; // Subtract from position
+      } else if (trade.transactionType === 'exchange') {
+        multiplier = 0;  // Neutral - don't count exchanges as buys or sells
+      }
+
+      existing.value += (parseFloat(trade.estimatedValue as any) || 0) * multiplier;
       existing.shares += (trade.quantity || 0) * multiplier;
       existing.transactionCount += 1;
+
+      // Track latest transaction date
+      if (trade.transactionDate > existing.latestTransactionDate) {
+        existing.latestTransactionDate = trade.transactionDate;
+      }
 
       positions.set(key, existing);
     }
