@@ -74,16 +74,33 @@ Democratize access to trading data from politicians and corporate executives, pr
 - **Daily data synchronization** - Automated data pipeline
 - **RESTful API design** - Clean, documented endpoints
 
-### Infrastructure
-- **Vercel** - Frontend deployment and hosting
-- **Railway** - Backend deployment and database hosting
-- **Sentry** - Error tracking and performance monitoring
+### Infrastructure & Deployment
+- **Vercel** - Frontend deployment and hosting (FREE tier)
+- **Render.com** - Backend API hosting (FREE tier)
+- **Neon** - PostgreSQL database (FREE tier, 500 MB)
+- **Upstash** - Redis cache (FREE tier, 10K commands/day)
+- **GitHub Actions** - Automated daily data sync (FREE)
+- **Total Cost**: **$0/month** on free tiers!
 
 ## 🚀 Getting Started
 
-### Quick Start (Recommended)
+### 🌐 Production Deployment (100% FREE)
 
-The fastest way to get started is using Docker:
+Want to deploy your own instance? We have a **complete guide** for deploying on 100% free tier services:
+
+👉 **[Read the Full Deployment Guide](docs/DEPLOYMENT.md)**
+
+**Quick Summary:**
+- **Frontend**: Vercel (FREE - 100 GB bandwidth/month)
+- **Backend**: Render.com (FREE - 750 hours/month)
+- **Database**: Neon PostgreSQL (FREE - 500 MB)
+- **Cache**: Upstash Redis (FREE - 10K commands/day)
+- **Estimated time**: 2 hours
+- **Total cost**: $0/month
+
+### Quick Start for Local Development
+
+The fastest way to get started locally is using Docker:
 
 ```bash
 # Clone the repository

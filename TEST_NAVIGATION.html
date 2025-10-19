@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CongressTracker - Navigation Testing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #10b981;
+            color: white;
+            border-radius: 5px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            transition: background 0.2s;
+            margin-top: 10px;
+            margin-right: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        .button:hover {
+            background: #5568d3;
+        }
+
+        .button-secondary {
+            background: #6b7280;
+        }
+
+        .button-secondary:hover {
+            background: #4b5563;
+        }
+
+        .button-success {
+            background: #10b981;
+        }
+
+        .button-success:hover {
+            background: #059669;
+        }
+
+        .test-links {
+            list-style: none;
+            margin-top: 15px;
+        }
+
+        .test-links li {
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .test-links li:last-child {
+            border-bottom: none;
+        }
+
+        .test-links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .test-links a:hover {
+            text-decoration: underline;
+        }
+
+        .code-snippet {
+            background: #1f2937;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        .checklist {
+            list-style: none;
+            margin-top: 15px;
+        }
+
+        .checklist li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .checklist li:before {
+            content: '☐';
+            margin-right: 10px;
+            font-size: 1.2em;
+            color: #667eea;
+        }
+
+        .info-box {
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 5px;
+        }
+
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 5px;
+        }
+
+        .success-box {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Navigation Fix Testing</h1>
+            <p style="margin: 10px 0;">CongressTracker - Navigation Links Fix Verification</p>
+            <span class="status">✅ Fix Applied</span>
+        </div>
+
+        <div class="grid">
+            <!-- Quick Links Card -->
+            <div class="card">
+                <h2>🚀 Quick Links</h2>
+                <p>Open the application pages for testing:</p>
+                <a href="http://localhost:3000" class="button" target="_blank">Open Homepage</a>
+                <a href="http://localhost:3000/trades" class="button" target="_blank">Open /trades</a>
+                <a href="http://localhost:3000/members" class="button-secondary button" target="_blank">Open /members</a>
+                <a href="http://localhost:3000/alerts" class="button-secondary button" target="_blank">Open /alerts</a>
+            </div>
+
+            <!-- What Was Fixed Card -->
+            <div class="card">
+                <h2>🔧 What Was Fixed</h2>
+                <p><strong>Problem:</strong> Navigation links were unclickable on /trades and other pages</p>
+                <p style="margin-top: 10px;"><strong>Root Cause:</strong> Radix UI Sheet component setting <code>pointer-events: none</code> on body</p>
+                <p style="margin-top: 10px;"><strong>Solution:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 5px;">
+                    <li>Added <code>modal={false}</code> to Sheet</li>
+                    <li>Added automatic pointer-events reset</li>
+                    <li>Added diagnostic logging</li>
+                </ul>
+            </div>
+
+            <!-- Browser Testing Card -->
+            <div class="card">
+                <h2>🧪 Browser Testing Script</h2>
+                <p>Copy and paste this into your browser console (F12):</p>
+                <div class="code-snippet">
+// Load testing script
+const script = document.createElement('script');
+script.src = 'http://localhost:3000/test-navigation.js';
+document.head.appendChild(script);
+                </div>
+                <div class="info-box">
+                    <strong>📝 Note:</strong> The script will automatically run tests and show results in the console.
+                </div>
+            </div>
+
+            <!-- Manual Testing Checklist -->
+            <div class="card">
+                <h2>✅ Manual Testing Checklist</h2>
+                <p>Test these scenarios on each page:</p>
+                <ul class="checklist">
+                    <li>Click Dashboard link</li>
+                    <li>Click Members link</li>
+                    <li>Click Alerts link</li>
+                    <li>Click Search link</li>
+                    <li>Click logo to go home</li>
+                    <li>Open mobile menu (resize window)</li>
+                    <li>Close mobile menu</li>
+                    <li>Test navigation after closing menu</li>
+                </ul>
+            </div>
+
+            <!-- Expected Results Card -->
+            <div class="card">
+                <h2>✨ Expected Results</h2>
+                <div class="success-box">
+                    <strong>✅ Success Indicators:</strong>
+                    <ul style="margin-left: 20px; margin-top: 5px;">
+                        <li>All links are clickable</li>
+                        <li>Cursor changes to pointer on hover</li>
+                        <li>Navigation works on all pages</li>
+                        <li>Mobile menu doesn't break navigation</li>
+                    </ul>
+                </div>
+                <div class="warning-box" style="margin-top: 10px;">
+                    <strong>⚠️ Check Console For:</strong>
+                    <ul style="margin-left: 20px; margin-top: 5px;">
+                        <li>Warning: "Body pointer-events was set to 'none'"</li>
+                        <li>If you see this: The fix is working! ✅</li>
+                        <li>If you don't: The bug wasn't happening (also good!)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Debug Commands Card -->
+            <div class="card">
+                <h2>🐛 Debug Commands</h2>
+                <p>Run these in browser console if issues persist:</p>
+                <div class="code-snippet">
+// Check pointer events
+document.body.style.pointerEvents
+
+// Should return: "" or "auto"
+// NOT "none"
+                </div>
+                <div class="code-snippet">
+// Force reset pointer events
+document.body.style.pointerEvents = 'auto'
+                </div>
+                <div class="code-snippet">
+// Check header z-index
+getComputedStyle(document.querySelector('header')).zIndex
+
+// Should return: "50"
+                </div>
+            </div>
+
+            <!-- Pages to Test Card -->
+            <div class="card">
+                <h2>📄 Pages to Test</h2>
+                <ul class="test-links">
+                    <li><a href="http://localhost:3000" target="_blank">/ - Homepage (Dashboard)</a></li>
+                    <li><a href="http://localhost:3000/trades" target="_blank">/trades - Congressional Trades (PRIMARY TEST)</a></li>
+                    <li><a href="http://localhost:3000/members" target="_blank">/members - Congressional Members</a></li>
+                    <li><a href="http://localhost:3000/alerts" target="_blank">/alerts - Alerts Management</a></li>
+                    <li><a href="http://localhost:3000/search" target="_blank">/search - Search (may be 404)</a></li>
+                </ul>
+            </div>
+
+            <!-- Documentation Card -->
+            <div class="card">
+                <h2>📚 Documentation</h2>
+                <p>Full testing guide available:</p>
+                <a href="file:///Users/leeshaun/Desktop/congresstracker/NAVIGATION_FIX_TESTING.md" class="button-success button">View Testing Guide</a>
+                <div class="info-box">
+                    <strong>Files Modified:</strong><br>
+                    <code>/frontend/src/components/layout/Layout.tsx</code>
+                </div>
+            </div>
+
+            <!-- Next Steps Card -->
+            <div class="card">
+                <h2>🎯 Next Steps</h2>
+                <p><strong>If navigation works:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 5px;">
+                    <li>✅ Fix successful!</li>
+                    <li>✅ No further action needed</li>
+                    <li>✅ Mark task as complete</li>
+                </ul>
+                <p style="margin-top: 10px;"><strong>If navigation doesn't work:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 5px;">
+                    <li>🔧 Update Radix UI packages</li>
+                    <li>🔧 Check for CSS conflicts</li>
+                    <li>🔧 Investigate React 19 compatibility</li>
+                </ul>
+                <button class="button" onclick="window.location.reload()">🔄 Refresh Page</button>
+            </div>
+        </div>
+
+        <div class="card" style="text-align: center; margin-top: 20px;">
+            <h2>🎉 Ready to Test!</h2>
+            <p style="margin: 15px 0;">Follow the checklist above and report any issues you encounter.</p>
+            <a href="http://localhost:3000/trades" class="button" target="_blank" style="font-size: 1.1em; padding: 15px 30px;">
+                🚀 Start Testing on /trades
+            </a>
+        </div>
+    </div>
+
+    <script>
+        console.log('🧪 Navigation Testing Page Loaded');
+        console.log('📝 Follow the instructions above to test the navigation fix');
+        console.log('💡 Open http://localhost:3000 and test navigation links');
+    </script>
+</body>
+</html>

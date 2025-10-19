@@ -15,7 +15,8 @@
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write src/**/*.ts",
     "db:migrate": "node -r tsx/cjs src/scripts/migrate.ts",
-    "db:seed": "node -r tsx/cjs src/scripts/seed.ts"
+    "db:seed": "node -r tsx/cjs src/scripts/seed.ts",
+    "sync:now": "tsx scripts/sync-now.ts"
   },
   "dependencies": {
     "axios": "^1.6.0",

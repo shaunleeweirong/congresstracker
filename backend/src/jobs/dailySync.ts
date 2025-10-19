@@ -19,7 +19,7 @@ export async function runDailySync(): Promise<void> {
     const result = await syncService.syncAllCongressionalData({
       limit: 250, // API hard cap per request
       maxPages: 10, // DAILY SYNC: 10 pages = last 2-3 months (catches new trades)
-                    // Initial 100-page backfill completed on 2025-10-07
+                    // Initial 100-page backfill completed on 2025-10-18
                     // ~2,500 trades total, ~2-3 min sync time
       forceUpdate: false,
       syncInsiders: false, // Can enable this later if needed

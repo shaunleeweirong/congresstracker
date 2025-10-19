@@ -7,12 +7,14 @@ export class SearchController {
    */
   static async searchAll(req: Request, res: Response): Promise<void> {
     try {
-      const { q: query, type, limit, offset } = req.query;
+      // Accept both 'q' and 'query' as parameter names
+      const { q, query: queryParam, type, limit, offset } = req.query;
+      const query = q || queryParam;
 
       if (!query || typeof query !== 'string') {
         res.status(400).json({
           success: false,
-          error: 'Search query is required'
+          error: 'Search query is required (use ?q=search_term or ?query=search_term)'
         });
         return;
       }
@@ -70,12 +72,14 @@ export class SearchController {
    */
   static async searchPoliticians(req: Request, res: Response): Promise<void> {
     try {
-      const { q: query, state, position, party, active, limit, offset } = req.query;
+      // Accept both 'q' and 'query' as parameter names
+      const { q, query: queryParam, state, position, party, active, limit, offset } = req.query;
+      const query = q || queryParam;
 
       if (!query || typeof query !== 'string') {
         res.status(400).json({
           success: false,
-          error: 'Search query is required'
+          error: 'Search query is required (use ?q=search_term or ?query=search_term)'
         });
         return;
       }
@@ -155,22 +159,25 @@ export class SearchController {
    */
   static async searchStocks(req: Request, res: Response): Promise<void> {
     try {
-      const { 
-        q: query, 
-        sector, 
-        industry, 
-        minMarketCap, 
+      // Accept both 'q' and 'query' as parameter names
+      const {
+        q,
+        query: queryParam,
+        sector,
+        industry,
+        minMarketCap,
         maxMarketCap,
         minPrice,
         maxPrice,
         limit, 
         offset 
       } = req.query;
+      const query = q || queryParam;
 
       if (!query || typeof query !== 'string') {
         res.status(400).json({
           success: false,
-          error: 'Search query is required'
+          error: 'Search query is required (use ?q=search_term or ?query=search_term)'
         });
         return;
       }

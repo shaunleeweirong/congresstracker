@@ -42,10 +42,12 @@ class App {
     }));
 
     // CORS configuration
+    const allowedOrigins = process.env.NODE_ENV === 'production'
+      ? (process.env.CORS_ORIGIN || process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean)
+      : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'];
+
     this.app.use(cors({
-      origin: process.env.NODE_ENV === 'production'
-        ? process.env.ALLOWED_ORIGINS?.split(',') || []
-        : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'],
+      origin: allowedOrigins,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Request-ID'],

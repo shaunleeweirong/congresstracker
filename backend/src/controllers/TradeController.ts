@@ -387,17 +387,46 @@ export class TradeController {
    */
   static async getTopTradedStocks(req: Request, res: Response): Promise<void> {
     try {
-      const { timeframe, limit } = req.query;
+      const { timeframe, startDate, endDate, limit } = req.query;
 
-      const validTimeframes = ['day', 'week', 'month', 'quarter', 'year'];
-      const tf = (timeframe as string) || 'month';
-      
-      if (!validTimeframes.includes(tf)) {
-        res.status(400).json({
-          success: false,
-          error: 'timeframe must be "day", "week", "month", "quarter", or "year"'
-        });
-        return;
+      let startDateValue: Date;
+
+      // Accept either startDate+endDate OR timeframe
+      if (startDate && endDate) {
+        // Use provided date range
+        startDateValue = new Date(startDate as string);
+        const endDateValue = new Date(endDate as string);
+
+        if (isNaN(startDateValue.getTime()) || isNaN(endDateValue.getTime())) {
+          res.status(400).json({
+            success: false,
+            error: 'Invalid date format. Use ISO 8601 format (e.g., 2025-09-01T00:00:00.000Z)'
+          });
+          return;
+        }
+
+        if (startDateValue > endDateValue) {
+          res.status(400).json({
+            success: false,
+            error: 'startDate must be before endDate'
+          });
+          return;
+        }
+      } else {
+        // Fall back to timeframe
+        const validTimeframes = ['day', 'week', 'month', 'quarter', 'year'];
+        const tf = (timeframe as string) || 'month';
+
+        if (!validTimeframes.includes(tf)) {
+          res.status(400).json({
+            success: false,
+            error: 'timeframe must be "day", "week", "month", "quarter", or "year"'
+          });
+          return;
+        }
+
+        // Convert timeframe to startDate
+        startDateValue = TradeService.getTimeframeStartDate(tf as any);
       }
 
       let limitNum = 20;
@@ -412,7 +441,7 @@ export class TradeController {
         }
       }
 
-      const result = await TradeService.getTopTradedStocks(tf as any, limitNum);
+      const result = await TradeService.getTopTradedStocks(startDateValue, limitNum);
 
       res.status(200).json({
         success: true,
@@ -432,17 +461,46 @@ export class TradeController {
    */
   static async getMostActiveTraders(req: Request, res: Response): Promise<void> {
     try {
-      const { timeframe, limit } = req.query;
+      const { timeframe, startDate, endDate, limit } = req.query;
 
-      const validTimeframes = ['day', 'week', 'month', 'quarter', 'year'];
-      const tf = (timeframe as string) || 'month';
-      
-      if (!validTimeframes.includes(tf)) {
-        res.status(400).json({
-          success: false,
-          error: 'timeframe must be "day", "week", "month", "quarter", or "year"'
-        });
-        return;
+      let startDateValue: Date;
+
+      // Accept either startDate+endDate OR timeframe
+      if (startDate && endDate) {
+        // Use provided date range
+        startDateValue = new Date(startDate as string);
+        const endDateValue = new Date(endDate as string);
+
+        if (isNaN(startDateValue.getTime()) || isNaN(endDateValue.getTime())) {
+          res.status(400).json({
+            success: false,
+            error: 'Invalid date format. Use ISO 8601 format (e.g., 2025-09-01T00:00:00.000Z)'
+          });
+          return;
+        }
+
+        if (startDateValue > endDateValue) {
+          res.status(400).json({
+            success: false,
+            error: 'startDate must be before endDate'
+          });
+          return;
+        }
+      } else {
+        // Fall back to timeframe
+        const validTimeframes = ['day', 'week', 'month', 'quarter', 'year'];
+        const tf = (timeframe as string) || 'month';
+
+        if (!validTimeframes.includes(tf)) {
+          res.status(400).json({
+            success: false,
+            error: 'timeframe must be "day", "week", "month", "quarter", or "year"'
+          });
+          return;
+        }
+
+        // Convert timeframe to startDate
+        startDateValue = TradeService.getTimeframeStartDate(tf as any);
       }
 
       let limitNum = 20;
@@ -457,7 +515,7 @@ export class TradeController {
         }
       }
 
-      const result = await TradeService.getMostActiveTraders(tf as any, limitNum);
+      const result = await TradeService.getMostActiveTraders(startDateValue, limitNum);
 
       res.status(200).json({
         success: true,

@@ -1,0 +1,72 @@
+# Render.com Deployment Configuration
+# Congressional Trading Transparency Platform - Backend API
+# FREE TIER DEPLOYMENT
+
+services:
+  # Backend API Service
+  - type: web
+    name: congresstracker-backend
+    runtime: node
+    region: oregon # Choose: oregon, frankfurt, singapore
+    plan: free # FREE TIER (512 MB RAM, spins down after 15 min)
+    branch: master
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      - key: PORT
+        value: 3001
+
+      - key: DATABASE_URL
+        sync: false # Add manually in Render dashboard (from Neon)
+
+      - key: REDIS_URL
+        sync: false # Add manually in Render dashboard (from Upstash)
+
+      - key: JWT_SECRET
+        generateValue: true # Render auto-generates secure secret
+
+      - key: FMP_API_KEY
+        sync: false # Add manually (your FMP API key)
+
+      - key: CORS_ORIGIN
+        sync: false # Add manually (your Vercel frontend URL)
+
+      - key: JWT_EXPIRES_IN
+        value: 7d
+
+      - key: BCRYPT_ROUNDS
+        value: 12
+
+      - key: API_VERSION
+        value: v1
+
+      - key: LOG_LEVEL
+        value: info
+
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 100
+
+# Note: After deployment, you'll get a URL like:
+# https://congresstracker-backend.onrender.com
+#
+# Use this URL for:
+# - NEXT_PUBLIC_API_URL in Vercel
+# - Testing API endpoints
+# - GitHub Actions daily sync
+#
+# Free Tier Limitations:
+# - 512 MB RAM
+# - Spins down after 15 minutes of inactivity
+# - First request after sleep takes ~30-60 seconds (cold start)
+# - 750 hours/month (enough for 24/7 uptime)
+#
+# To prevent sleep: Use UptimeRobot.com (free) to ping /health every 5 minutes

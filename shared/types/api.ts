@@ -92,8 +92,8 @@ export interface StockTrade {
   estimatedValue?: number;
   quantity?: number;
   filingDate?: string;
-  trader: CongressionalMember | CorporateInsider;
-  stock: StockTicker;
+  trader?: CongressionalMember | CorporateInsider;
+  stock?: StockTicker;
   createdAt: string;
   updatedAt: string;
 }
@@ -244,12 +244,12 @@ export type PaginatedApiFunction<TRequest = any, TResponse = any> = (
 ) => Promise<PaginatedResponse<TResponse>>;
 
 // Type guards
-export function isCongressionalMember(trader: CongressionalMember | CorporateInsider): trader is CongressionalMember {
-  return 'position' in trader && 'stateCode' in trader;
+export function isCongressionalMember(trader: CongressionalMember | CorporateInsider | undefined | null): trader is CongressionalMember {
+  return trader !== undefined && trader !== null && 'position' in trader && 'stateCode' in trader;
 }
 
-export function isCorporateInsider(trader: CongressionalMember | CorporateInsider): trader is CorporateInsider {
-  return 'companyName' in trader;
+export function isCorporateInsider(trader: CongressionalMember | CorporateInsider | undefined | null): trader is CorporateInsider {
+  return trader !== undefined && trader !== null && 'companyName' in trader;
 }
 
 export function isApiError(response: any): response is ApiError {
