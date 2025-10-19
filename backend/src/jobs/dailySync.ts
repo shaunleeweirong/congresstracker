@@ -97,4 +97,82 @@ export async function runIncrementalSync(days: number = 7): Promise<void> {
   }
 }
 
+/**
+ * Historical backfill - fetch all available data from FMP API (September 2012 - Present)
+ * Should only be run once during initial setup
+ */
+export async function runHistoricalBackfill(): Promise<void> {
+  const startTime = Date.now();
+  console.log('🚀 Starting HISTORICAL BACKFILL...');
+  console.log('📅 This will fetch ALL available congressional trading data');
+  console.log('📊 Expected: ~40,055 trades from September 2012 - Present');
+  console.log('⏱️  Estimated time: 2-3 minutes');
+  console.log('💾 Storage required: ~20-25 MB\n');
+
+  try {
+    const syncService = new CongressionalDataService();
+    const dashboardService = new DashboardService();
+
+    // Sync all congressional data with MAXIMUM pagination
+    console.log('\n📊 Syncing ALL congressional trading data from FMP API...');
+    const result = await syncService.syncAllCongressionalData({
+      limit: 250, // API hard cap per request
+      maxPages: 100, // HISTORICAL BACKFILL: Maximum allowed by FMP API
+                     // Senate: ~60 pages (14,805 trades)
+                     // House: ~100 pages (25,250 trades, hits API pagination limit)
+                     // Total: ~40,055 trades covering Sep 2012 - Present
+      forceUpdate: false,
+      syncInsiders: false,
+      onProgress: (progress) => {
+        const percent = ((progress.current / progress.total) * 100).toFixed(1);
+        console.log(`  📈 ${progress.type}: ${progress.current}/${progress.total} (${percent}%)`);
+      }
+    });
+
+    const duration = Date.now() - startTime;
+
+    // Log results
+    console.log('\n✅ HISTORICAL BACKFILL COMPLETED!');
+    console.log('━'.repeat(60));
+    console.log(`📈 Results:`);
+    console.log(`   - Total Processed: ${result.processedCount} trades`);
+    console.log(`   - Newly Created: ${result.createdCount} trades`);
+    console.log(`   - Updated: ${result.updatedCount} existing trades`);
+    console.log(`   - Skipped (duplicates): ${result.skippedCount} trades`);
+    console.log(`   - Errors: ${result.errors.length}`);
+    console.log(`   - Total Duration: ${(duration / 1000 / 60).toFixed(2)} minutes`);
+    console.log('━'.repeat(60));
+
+    // Storage estimate
+    const estimatedStorageMB = (result.createdCount * 0.0004).toFixed(2); // ~400 bytes per trade
+    console.log(`💾 Estimated storage used: ~${estimatedStorageMB} MB`);
+    console.log(`📊 Data coverage: September 2012 - ${new Date().toISOString().split('T')[0]}`);
+
+    if (result.errors.length > 0) {
+      console.warn('\n⚠️  Errors encountered during backfill:');
+      result.errors.slice(0, 10).forEach((error, index) => {
+        console.warn(`   ${index + 1}. ${error}`);
+      });
+      if (result.errors.length > 10) {
+        console.warn(`   ... and ${result.errors.length - 10} more errors`);
+      }
+    }
+
+    // Invalidate dashboard cache to reflect new data
+    console.log('\n🔄 Invalidating dashboard metrics cache...');
+    await dashboardService.invalidateCache();
+
+    console.log(`\n✅ Historical backfill job completed at ${new Date().toISOString()}`);
+    console.log(`⏱️  Total time: ${(duration / 1000 / 60).toFixed(2)} minutes\n`);
+
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    console.error('\n❌ Historical backfill job FAILED!');
+    console.error(`⏱️  Failed after: ${(duration / 1000 / 60).toFixed(2)} minutes`);
+    console.error(`🔥 Error:`, error);
+
+    throw error; // Re-throw to allow caller to handle it
+  }
+}
+
 export default runDailySync;
