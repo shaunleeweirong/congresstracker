@@ -28,6 +28,7 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "noEmit": false,
+    "noEmitOnError": false,
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
