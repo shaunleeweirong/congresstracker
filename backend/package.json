@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "npx esbuild src/**/*.ts --outdir=dist --platform=node --format=cjs --bundle --external:pg-native --external:@mapbox/node-pre-gyp",
+    "build": "npx esbuild src/server.ts --outdir=dist --platform=node --format=cjs --bundle --external:pg-native --external:@mapbox/node-pre-gyp",
     "start": "node dist/server.js",
     "type-check": "npx tsc --noEmit",
     "test": "jest",
