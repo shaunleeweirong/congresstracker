@@ -100,21 +100,28 @@ export async function runIncrementalSync(days: number = 7): Promise<void> {
 /**
  * Historical backfill - fetch all available data from FMP API (September 2012 - Present)
  * Should only be run once during initial setup
+ *
+ * FEATURES:
+ * - Checkpoint/Resume: Automatically resumes from last saved checkpoint if interrupted
+ * - Progress Tracking: Saves progress every 100 trades
+ * - Idempotent: Safe to run multiple times - will skip already-completed sections
  */
 export async function runHistoricalBackfill(): Promise<void> {
   const startTime = Date.now();
   console.log('🚀 Starting HISTORICAL BACKFILL...');
   console.log('📅 This will fetch ALL available congressional trading data');
   console.log('📊 Expected: ~40,055 trades from September 2012 - Present');
-  console.log('⏱️  Estimated time: 2-3 minutes');
-  console.log('💾 Storage required: ~20-25 MB\n');
+  console.log('⏱️  Estimated time: Variable (depends on network and DB latency)');
+  console.log('💾 Storage required: ~20-25 MB');
+  console.log('🔄 Checkpoint-enabled: Safe to restart if interrupted\n');
 
   try {
     const syncService = new CongressionalDataService();
     const dashboardService = new DashboardService();
 
-    // Sync all congressional data with MAXIMUM pagination
+    // Sync all congressional data with MAXIMUM pagination + CHECKPOINTS
     console.log('\n📊 Syncing ALL congressional trading data from FMP API...');
+    console.log('💾 Checkpoints will be saved every 100 trades\n');
     const result = await syncService.syncAllCongressionalData({
       limit: 250, // API hard cap per request
       maxPages: 100, // HISTORICAL BACKFILL: Maximum allowed by FMP API
@@ -123,6 +130,8 @@ export async function runHistoricalBackfill(): Promise<void> {
                      // Total: ~40,055 trades covering Sep 2012 - Present
       forceUpdate: false,
       syncInsiders: false,
+      useCheckpoints: true, // Enable resume capability
+      batchSize: 100, // Save checkpoint every 100 trades
       onProgress: (progress) => {
         const percent = ((progress.current / progress.total) * 100).toFixed(1);
         console.log(`  📈 ${progress.type}: ${progress.current}/${progress.total} (${percent}%)`);

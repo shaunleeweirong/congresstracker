@@ -1,5 +1,7 @@
 import dotenv from 'dotenv';
 import App from './app';
+import { runMigrations } from './utils/runMigrations';
+
 // Temporary mock connections for testing
 class MockDatabaseConnection {
   static async initialize(): Promise<void> {
@@ -37,6 +39,14 @@ class Server {
     try {
       // Initialize database connection
       await MockDatabaseConnection.initialize();
+
+      // Run database migrations automatically
+      try {
+        await runMigrations();
+      } catch (error) {
+        console.error('❌ Migration failed - server cannot start safely');
+        throw error;
+      }
 
       // Initialize Redis connection (optional)
       try {

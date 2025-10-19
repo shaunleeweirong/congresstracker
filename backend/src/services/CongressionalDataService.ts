@@ -20,6 +20,9 @@ export interface SyncOptions {
   forceUpdate?: boolean; // Update existing records even if they haven't changed
   syncInsiders?: boolean; // Whether to sync insider trading data
   onProgress?: (progress: { current: number; total: number; type: string }) => void;
+  useBatchProcessing?: boolean; // Use batch inserts for faster processing (default: true)
+  batchSize?: number; // Number of trades to process in a batch (default: 100)
+  useCheckpoints?: boolean; // Enable resume capability via checkpoints (default: true)
 }
 
 export class CongressionalDataService {
@@ -105,17 +108,56 @@ export class CongressionalDataService {
     let skippedCount = 0;
     const errors: string[] = [];
 
+    const useCheckpoints = options.useCheckpoints !== false; // Default: true
+    const useBatchProcessing = options.useBatchProcessing !== false; // Default: true
+    const batchSize = options.batchSize || 100;
+
     try {
       console.log('Starting Senate trades sync...');
 
       const maxPages = options.maxPages || 10;
       const limit = options.limit || 250;
 
+      // Load checkpoint if enabled
+      let checkpoint;
+      if (useCheckpoints) {
+        checkpoint = await this.getSyncProgress('senate');
+
+        // If already completed, skip
+        if (checkpoint.status === 'completed') {
+          console.log('✅ Senate sync already completed. Skipping...');
+          return {
+            success: true,
+            processedCount: checkpoint.totalRecords,
+            createdCount: checkpoint.createdCount,
+            updatedCount: checkpoint.updatedCount,
+            skippedCount: checkpoint.skippedCount,
+            errors: [],
+            duration: Date.now() - startTime
+          };
+        }
+
+        // If resuming from checkpoint
+        if (checkpoint.lastProcessedIndex > 0) {
+          console.log(`📍 Resuming from checkpoint: ${checkpoint.lastProcessedIndex}/${checkpoint.totalRecords} trades already processed`);
+          processedCount = checkpoint.lastProcessedIndex;
+          createdCount = checkpoint.createdCount;
+          updatedCount = checkpoint.updatedCount;
+          skippedCount = checkpoint.skippedCount;
+        } else {
+          // Mark as in-progress
+          await this.updateSyncProgress('senate', { status: 'in_progress' });
+        }
+      }
+
       console.log(`Fetching up to ${maxPages} pages of Senate trades (${limit} per page)...`);
       const senateTrades = await this.fmpClient.getAllSenateTrades(maxPages, limit);
 
       if (!Array.isArray(senateTrades) || senateTrades.length === 0) {
         console.log('No Senate trades found from FMP API');
+        if (useCheckpoints) {
+          await this.updateSyncProgress('senate', { status: 'completed', completed: true });
+        }
         return {
           success: true,
           processedCount: 0,
@@ -129,17 +171,37 @@ export class CongressionalDataService {
 
       console.log(`Processing ${senateTrades.length} Senate trades from ${maxPages} pages...`);
 
-      for (let i = 0; i < senateTrades.length; i++) {
+      // Update total records if first run
+      if (useCheckpoints && (!checkpoint || checkpoint.totalRecords === 0)) {
+        await this.updateSyncProgress('senate', { totalRecords: senateTrades.length });
+      }
+
+      // Determine starting index
+      const startIndex = useCheckpoints && checkpoint ? checkpoint.lastProcessedIndex : 0;
+
+      // Process trades (resume from checkpoint if applicable)
+      for (let i = startIndex; i < senateTrades.length; i++) {
         const trade = senateTrades[i];
-        
+
         try {
           const result = await this.processSenateTradeRecord(trade, options.forceUpdate);
-          
+
           if (result.action === 'created') createdCount++;
           else if (result.action === 'updated') updatedCount++;
           else if (result.action === 'skipped') skippedCount++;
-          
+
           processedCount++;
+
+          // Update checkpoint every batchSize trades
+          if (useCheckpoints && processedCount % batchSize === 0) {
+            await this.updateSyncProgress('senate', {
+              lastProcessedIndex: i + 1,
+              createdCount,
+              updatedCount,
+              skippedCount
+            });
+            console.log(`💾 Checkpoint saved: ${i + 1}/${senateTrades.length} trades processed`);
+          }
 
           // Report progress
           if (options.onProgress) {
@@ -154,6 +216,18 @@ export class CongressionalDataService {
           console.error(errorMsg);
           errors.push(errorMsg);
         }
+      }
+
+      // Mark as completed
+      if (useCheckpoints) {
+        await this.updateSyncProgress('senate', {
+          lastProcessedIndex: senateTrades.length,
+          createdCount,
+          updatedCount,
+          skippedCount,
+          status: 'completed',
+          completed: true
+        });
       }
 
       const duration = Date.now() - startTime;
@@ -172,7 +246,12 @@ export class CongressionalDataService {
       const duration = Date.now() - startTime;
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       console.error('Senate sync failed:', errorMsg);
-      
+
+      // Update checkpoint with error status
+      if (useCheckpoints) {
+        await this.updateSyncProgress('senate', { status: 'failed' });
+      }
+
       return {
         success: false,
         processedCount,
@@ -196,17 +275,55 @@ export class CongressionalDataService {
     let skippedCount = 0;
     const errors: string[] = [];
 
+    const useCheckpoints = options.useCheckpoints !== false; // Default: true
+    const batchSize = options.batchSize || 100;
+
     try {
       console.log('Starting House trades sync...');
 
       const maxPages = options.maxPages || 10;
       const limit = options.limit || 250;
 
+      // Load checkpoint if enabled
+      let checkpoint;
+      if (useCheckpoints) {
+        checkpoint = await this.getSyncProgress('house');
+
+        // If already completed, skip
+        if (checkpoint.status === 'completed') {
+          console.log('✅ House sync already completed. Skipping...');
+          return {
+            success: true,
+            processedCount: checkpoint.totalRecords,
+            createdCount: checkpoint.createdCount,
+            updatedCount: checkpoint.updatedCount,
+            skippedCount: checkpoint.skippedCount,
+            errors: [],
+            duration: Date.now() - startTime
+          };
+        }
+
+        // If resuming from checkpoint
+        if (checkpoint.lastProcessedIndex > 0) {
+          console.log(`📍 Resuming from checkpoint: ${checkpoint.lastProcessedIndex}/${checkpoint.totalRecords} trades already processed`);
+          processedCount = checkpoint.lastProcessedIndex;
+          createdCount = checkpoint.createdCount;
+          updatedCount = checkpoint.updatedCount;
+          skippedCount = checkpoint.skippedCount;
+        } else {
+          // Mark as in-progress
+          await this.updateSyncProgress('house', { status: 'in_progress' });
+        }
+      }
+
       console.log(`Fetching up to ${maxPages} pages of House trades (${limit} per page)...`);
       const houseTrades = await this.fmpClient.getAllHouseTrades(maxPages, limit);
 
       if (!Array.isArray(houseTrades) || houseTrades.length === 0) {
         console.log('No House trades found from FMP API');
+        if (useCheckpoints) {
+          await this.updateSyncProgress('house', { status: 'completed', completed: true });
+        }
         return {
           success: true,
           processedCount: 0,
@@ -220,17 +337,37 @@ export class CongressionalDataService {
 
       console.log(`Processing ${houseTrades.length} House trades from ${maxPages} pages...`);
 
-      for (let i = 0; i < houseTrades.length; i++) {
+      // Update total records if first run
+      if (useCheckpoints && (!checkpoint || checkpoint.totalRecords === 0)) {
+        await this.updateSyncProgress('house', { totalRecords: houseTrades.length });
+      }
+
+      // Determine starting index
+      const startIndex = useCheckpoints && checkpoint ? checkpoint.lastProcessedIndex : 0;
+
+      // Process trades (resume from checkpoint if applicable)
+      for (let i = startIndex; i < houseTrades.length; i++) {
         const trade = houseTrades[i];
-        
+
         try {
           const result = await this.processHouseTradeRecord(trade, options.forceUpdate);
-          
+
           if (result.action === 'created') createdCount++;
           else if (result.action === 'updated') updatedCount++;
           else if (result.action === 'skipped') skippedCount++;
-          
+
           processedCount++;
+
+          // Update checkpoint every batchSize trades
+          if (useCheckpoints && processedCount % batchSize === 0) {
+            await this.updateSyncProgress('house', {
+              lastProcessedIndex: i + 1,
+              createdCount,
+              updatedCount,
+              skippedCount
+            });
+            console.log(`💾 Checkpoint saved: ${i + 1}/${houseTrades.length} trades processed`);
+          }
 
           // Report progress
           if (options.onProgress) {
@@ -245,6 +382,18 @@ export class CongressionalDataService {
           console.error(errorMsg);
           errors.push(errorMsg);
         }
+      }
+
+      // Mark as completed
+      if (useCheckpoints) {
+        await this.updateSyncProgress('house', {
+          lastProcessedIndex: houseTrades.length,
+          createdCount,
+          updatedCount,
+          skippedCount,
+          status: 'completed',
+          completed: true
+        });
       }
 
       const duration = Date.now() - startTime;
@@ -263,7 +412,12 @@ export class CongressionalDataService {
       const duration = Date.now() - startTime;
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       console.error('House sync failed:', errorMsg);
-      
+
+      // Update checkpoint with error status
+      if (useCheckpoints) {
+        await this.updateSyncProgress('house', { status: 'failed' });
+      }
+
       return {
         success: false,
         processedCount,
@@ -789,12 +943,163 @@ export class CongressionalDataService {
    */
   async testSync(limit = 5): Promise<SyncResult> {
     console.log(`Testing congressional data sync with limit ${limit}...`);
-    
+
     return this.syncAllCongressionalData({
       limit,
       forceUpdate: false,
       syncInsiders: false
     });
+  }
+
+  // ========================================================================
+  // CHECKPOINT MANAGEMENT (for resumable historical backfill)
+  // ========================================================================
+
+  /**
+   * Get sync progress from database
+   */
+  private async getSyncProgress(syncType: 'senate' | 'house' | 'insiders'): Promise<{
+    lastProcessedIndex: number;
+    totalRecords: number;
+    createdCount: number;
+    updatedCount: number;
+    skippedCount: number;
+    errorCount: number;
+    status: string;
+  }> {
+    const client = await db.connect();
+    try {
+      const result = await client.query(
+        'SELECT * FROM sync_progress WHERE sync_type = $1',
+        [syncType]
+      );
+
+      if (result.rows.length === 0) {
+        // Initialize if not exists
+        await client.query(
+          `INSERT INTO sync_progress (sync_type, status)
+           VALUES ($1, 'pending')
+           ON CONFLICT (sync_type) DO NOTHING`,
+          [syncType]
+        );
+        return {
+          lastProcessedIndex: 0,
+          totalRecords: 0,
+          createdCount: 0,
+          updatedCount: 0,
+          skippedCount: 0,
+          errorCount: 0,
+          status: 'pending'
+        };
+      }
+
+      const row = result.rows[0];
+      return {
+        lastProcessedIndex: row.last_processed_index || 0,
+        totalRecords: row.total_records || 0,
+        createdCount: row.created_count || 0,
+        updatedCount: row.updated_count || 0,
+        skippedCount: row.skipped_count || 0,
+        errorCount: row.error_count || 0,
+        status: row.status || 'pending'
+      };
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Update sync progress checkpoint
+   */
+  private async updateSyncProgress(
+    syncType: 'senate' | 'house' | 'insiders',
+    updates: {
+      lastProcessedIndex?: number;
+      totalRecords?: number;
+      createdCount?: number;
+      updatedCount?: number;
+      skippedCount?: number;
+      errorCount?: number;
+      status?: string;
+      completed?: boolean;
+    }
+  ): Promise<void> {
+    const client = await db.connect();
+    try {
+      const setClauses: string[] = [];
+      const values: any[] = [];
+      let paramIndex = 1;
+
+      if (updates.lastProcessedIndex !== undefined) {
+        setClauses.push(`last_processed_index = $${paramIndex++}`);
+        values.push(updates.lastProcessedIndex);
+      }
+      if (updates.totalRecords !== undefined) {
+        setClauses.push(`total_records = $${paramIndex++}`);
+        values.push(updates.totalRecords);
+      }
+      if (updates.createdCount !== undefined) {
+        setClauses.push(`created_count = $${paramIndex++}`);
+        values.push(updates.createdCount);
+      }
+      if (updates.updatedCount !== undefined) {
+        setClauses.push(`updated_count = $${paramIndex++}`);
+        values.push(updates.updatedCount);
+      }
+      if (updates.skippedCount !== undefined) {
+        setClauses.push(`skipped_count = $${paramIndex++}`);
+        values.push(updates.skippedCount);
+      }
+      if (updates.errorCount !== undefined) {
+        setClauses.push(`error_count = $${paramIndex++}`);
+        values.push(updates.errorCount);
+      }
+      if (updates.status !== undefined) {
+        setClauses.push(`status = $${paramIndex++}`);
+        values.push(updates.status);
+      }
+      if (updates.completed) {
+        setClauses.push(`completed_at = NOW()`);
+      }
+
+      setClauses.push(`updated_at = NOW()`);
+      values.push(syncType);
+
+      await client.query(
+        `UPDATE sync_progress
+         SET ${setClauses.join(', ')}
+         WHERE sync_type = $${paramIndex}`,
+        values
+      );
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Reset sync progress for a fresh start
+   */
+  private async resetSyncProgress(syncType: 'senate' | 'house' | 'insiders'): Promise<void> {
+    const client = await db.connect();
+    try {
+      await client.query(
+        `UPDATE sync_progress
+         SET last_processed_index = 0,
+             total_records = 0,
+             created_count = 0,
+             updated_count = 0,
+             skipped_count = 0,
+             error_count = 0,
+             status = 'pending',
+             started_at = NOW(),
+             updated_at = NOW(),
+             completed_at = NULL
+         WHERE sync_type = $1`,
+        [syncType]
+      );
+    } finally {
+      client.release();
+    }
   }
 }
 
