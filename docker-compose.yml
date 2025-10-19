@@ -1,0 +1,193 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: congresstracker-postgres
+    environment:
+      POSTGRES_DB: congresstracker
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d/migrations
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d congresstracker"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: congresstracker-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # Backend API (Development)
+  backend-dev:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: congresstracker-backend-dev
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:password123@postgres:5432/congresstracker
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: your_jwt_secret_key_here_minimum_32_characters
+      FMP_API_KEY: eZgVpY932rWQrf4c9XQB0VpAN22urjxv
+      PORT: 3001
+      CORS_ORIGIN: http://localhost:3000
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/scripts:/app/scripts
+      - ./backend/package.json:/app/package.json
+      - ./shared:/app/shared
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: npm run dev
+    networks:
+      - app-network
+    profiles:
+      - dev
+
+  # Backend API (Production)
+  backend-prod:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: production
+    container_name: congresstracker-backend-prod
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:password123@postgres:5432/congresstracker
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-your_jwt_secret_key_here_minimum_32_characters}
+      FMP_API_KEY: ${FMP_API_KEY:-your_fmp_api_key_here}
+      PORT: 3001
+      CORS_ORIGIN: http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app-network
+    profiles:
+      - prod
+
+  # Frontend (Development)
+  frontend-dev:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: congresstracker-frontend-dev
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api/v1
+      NEXTAUTH_SECRET: your_nextauth_secret_here
+      NEXTAUTH_URL: http://localhost:3000
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/package.json:/app/package.json
+      - ./shared:/app/shared
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend-dev
+    command: npm run dev
+    networks:
+      - app-network
+    profiles:
+      - dev
+
+  # Frontend (Production)
+  frontend-prod:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      target: production
+    container_name: congresstracker-frontend-prod
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api/v1
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-your_nextauth_secret_here}
+      NEXTAUTH_URL: http://localhost:3000
+    depends_on:
+      - backend-prod
+    restart: unless-stopped
+    networks:
+      - app-network
+    profiles:
+      - prod
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  app-network:
+    driver: bridge
+
+# Additional services for development tools
+# Uncomment these if you want to run additional development tools
+
+# # pgAdmin for database management
+# pgadmin:
+#   image: dpage/pgadmin4:latest
+#   container_name: congresstracker-pgadmin
+#   environment:
+#     PGADMIN_DEFAULT_EMAIL: admin@example.com
+#     PGADMIN_DEFAULT_PASSWORD: admin123
+#   ports:
+#     - "8080:80"
+#   depends_on:
+#     - postgres
+#   networks:
+#     - app-network
+#   profiles:
+#     - tools
+
+# # Redis Commander for Redis management
+# redis-commander:
+#   image: rediscommander/redis-commander:latest
+#   container_name: congresstracker-redis-commander
+#   environment:
+#     REDIS_HOSTS: local:redis:6379
+#   ports:
+#     - "8081:8081"
+#   depends_on:
+#     - redis
+#   networks:
+#     - app-network
+#   profiles:
+#     - tools
