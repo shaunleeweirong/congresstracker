@@ -100,7 +100,23 @@ export async function runMigrations(): Promise<void> {
     const executedMigrations = await getExecutedMigrations();
 
     // Get all migration files
-    const migrationsDir = path.join(__dirname, '../../migrations');
+    // Handle both development and production paths
+    let migrationsDir: string;
+
+    // In production (Render), migrations are in /app/backend/migrations
+    // In development, migrations are in backend/migrations relative to src
+    const productionPath = '/app/backend/migrations';
+    const devPath = path.join(__dirname, '../../migrations');
+
+    try {
+      await fs.access(productionPath);
+      migrationsDir = productionPath;
+      console.log(`📁 Using production migrations path: ${migrationsDir}`);
+    } catch {
+      migrationsDir = devPath;
+      console.log(`📁 Using development migrations path: ${migrationsDir}`);
+    }
+
     const files = await fs.readdir(migrationsDir);
     const migrationFiles = files
       .filter(f => f.endsWith('.sql'))
