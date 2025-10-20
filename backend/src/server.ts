@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 import App from './app';
 import { runMigrations } from './utils/runMigrations';
+import { CongressionalDataService } from './services/CongressionalDataService';
+import { runHistoricalBackfill } from './jobs/dailySync';
 
 // Temporary mock connections for testing
 class MockDatabaseConnection {
@@ -46,6 +48,25 @@ class Server {
       } catch (error) {
         console.error('❌ Migration failed - server cannot start safely');
         throw error;
+      }
+
+      // Auto-resume incomplete backfills (non-blocking)
+      try {
+        const dataService = new CongressionalDataService();
+        const hasIncomplete = await dataService.hasIncompleteBackfills();
+
+        if (hasIncomplete) {
+          console.log('📍 Incomplete backfill detected - auto-resuming in background...');
+
+          // Run backfill asynchronously (don't block server startup)
+          runHistoricalBackfill().catch(err => {
+            console.error('❌ Auto-resume backfill error:', err);
+          });
+        } else {
+          console.log('✅ No incomplete backfills found');
+        }
+      } catch (error) {
+        console.warn('⚠️  Could not check for incomplete backfills:', error);
       }
 
       // Initialize Redis connection (optional)

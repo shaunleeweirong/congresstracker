@@ -1101,6 +1101,25 @@ export class CongressionalDataService {
       client.release();
     }
   }
+
+  /**
+   * Check if there are any incomplete backfills that need to be resumed
+   * Returns true if any sync is in 'in_progress' or 'failed' status
+   */
+  async hasIncompleteBackfills(): Promise<boolean> {
+    const client = await db.connect();
+    try {
+      const result = await client.query(
+        "SELECT COUNT(*) as count FROM sync_progress WHERE status IN ('in_progress', 'failed')"
+      );
+      return parseInt(result.rows[0].count) > 0;
+    } catch (error) {
+      console.error('❌ Error checking for incomplete backfills:', error);
+      return false; // Fail gracefully - don't crash server
+    } finally {
+      client.release();
+    }
+  }
 }
 
 export default CongressionalDataService;
