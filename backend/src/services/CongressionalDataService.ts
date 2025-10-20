@@ -144,8 +144,10 @@ export class CongressionalDataService {
           createdCount = checkpoint.createdCount;
           updatedCount = checkpoint.updatedCount;
           skippedCount = checkpoint.skippedCount;
+          // Ensure status is in_progress when resuming
+          await this.updateSyncProgress('senate', { status: 'in_progress' });
         } else {
-          // Mark as in-progress
+          // Mark as in-progress for first run
           await this.updateSyncProgress('senate', { status: 'in_progress' });
         }
       }
@@ -310,8 +312,10 @@ export class CongressionalDataService {
           createdCount = checkpoint.createdCount;
           updatedCount = checkpoint.updatedCount;
           skippedCount = checkpoint.skippedCount;
+          // Ensure status is in_progress when resuming
+          await this.updateSyncProgress('house', { status: 'in_progress' });
         } else {
-          // Mark as in-progress
+          // Mark as in-progress for first run
           await this.updateSyncProgress('house', { status: 'in_progress' });
         }
       }
@@ -1107,14 +1111,36 @@ export class CongressionalDataService {
    * Returns true if any sync is in 'in_progress' or 'failed' status
    */
   async hasIncompleteBackfills(): Promise<boolean> {
+    console.log('🔍 Checking for incomplete backfills...');
+
     const client = await db.connect();
     try {
+      // First, check what's in the sync_progress table
+      const allRows = await client.query(
+        "SELECT sync_type, status, last_processed_index, total_records FROM sync_progress"
+      );
+
+      console.log('📊 Current sync_progress state:');
+      if (allRows.rows.length === 0) {
+        console.log('   (empty table - no syncs started yet)');
+      } else {
+        allRows.rows.forEach(row => {
+          console.log(`   - ${row.sync_type}: ${row.status} (${row.last_processed_index}/${row.total_records} processed)`);
+        });
+      }
+
+      // Check for incomplete syncs
       const result = await client.query(
         "SELECT COUNT(*) as count FROM sync_progress WHERE status IN ('in_progress', 'failed')"
       );
-      return parseInt(result.rows[0].count) > 0;
+
+      const hasIncomplete = parseInt(result.rows[0].count) > 0;
+      console.log(`🔍 Incomplete backfills found: ${hasIncomplete}`);
+
+      return hasIncomplete;
     } catch (error) {
       console.error('❌ Error checking for incomplete backfills:', error);
+      console.error('   This might be a database connection issue - will retry on next startup');
       return false; // Fail gracefully - don't crash server
     } finally {
       client.release();

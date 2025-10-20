@@ -50,24 +50,47 @@ class Server {
         throw error;
       }
 
-      // Auto-resume incomplete backfills (non-blocking)
-      try {
-        const dataService = new CongressionalDataService();
-        const hasIncomplete = await dataService.hasIncompleteBackfills();
+      // Auto-resume incomplete backfills (with retry logic)
+      const checkAndResumeBackfill = async (retries = 3, delayMs = 2000) => {
+        for (let attempt = 1; attempt <= retries; attempt++) {
+          try {
+            console.log(`\n🔄 Attempt ${attempt}/${retries}: Checking for incomplete backfills...`);
 
-        if (hasIncomplete) {
-          console.log('📍 Incomplete backfill detected - auto-resuming in background...');
+            const dataService = new CongressionalDataService();
+            const hasIncomplete = await dataService.hasIncompleteBackfills();
 
-          // Run backfill asynchronously (don't block server startup)
-          runHistoricalBackfill().catch(err => {
-            console.error('❌ Auto-resume backfill error:', err);
-          });
-        } else {
-          console.log('✅ No incomplete backfills found');
+            if (hasIncomplete) {
+              console.log('📍 Incomplete backfill detected - auto-resuming in background...');
+
+              // Run backfill asynchronously (don't block server startup)
+              runHistoricalBackfill().catch(err => {
+                console.error('❌ Auto-resume backfill error:', err);
+              });
+
+              return; // Success - exit retry loop
+            } else {
+              console.log('✅ No incomplete backfills found');
+              return; // Success - exit retry loop
+            }
+          } catch (error) {
+            console.error(`⚠️  Attempt ${attempt}/${retries} failed:`, error);
+
+            if (attempt < retries) {
+              console.log(`   Retrying in ${delayMs}ms...`);
+              await new Promise(resolve => setTimeout(resolve, delayMs));
+              delayMs *= 2; // Exponential backoff
+            } else {
+              console.error('❌ All retry attempts failed. Auto-resume may not work this cycle.');
+              console.error('   The server will try again on next restart.');
+            }
+          }
         }
-      } catch (error) {
-        console.warn('⚠️  Could not check for incomplete backfills:', error);
-      }
+      };
+
+      // Run in background - don't block server startup
+      checkAndResumeBackfill().catch(err => {
+        console.error('❌ Fatal error in auto-resume check:', err);
+      });
 
       // Initialize Redis connection (optional)
       try {
