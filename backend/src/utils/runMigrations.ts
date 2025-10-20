@@ -1,13 +1,15 @@
 /**
  * Migration Runner
  * Automatically runs pending SQL migrations on server startup
+ *
+ * Uses embedded migrations (stored in TypeScript) rather than external .sql files.
+ * This ensures migrations are always available regardless of deployment platform.
  */
 
 import { db } from '../config/database';
-import fs from 'fs/promises';
-import path from 'path';
+import { migrations } from './migrations';
 
-interface Migration {
+interface ExecutedMigration {
   id: number;
   name: string;
   executed_at: Date;
@@ -38,7 +40,7 @@ async function ensureMigrationsTable(): Promise<void> {
 async function getExecutedMigrations(): Promise<Set<string>> {
   const client = await db.connect();
   try {
-    const result = await client.query<Migration>(
+    const result = await client.query<ExecutedMigration>(
       'SELECT name FROM schema_migrations ORDER BY id'
     );
     return new Set(result.rows.map(row => row.name));
@@ -63,23 +65,22 @@ async function markMigrationExecuted(name: string): Promise<void> {
 }
 
 /**
- * Execute a single migration file
+ * Execute a single migration
  */
-async function executeMigration(filePath: string, fileName: string): Promise<void> {
+async function executeMigration(name: string, sql: string): Promise<void> {
   const client = await db.connect();
   try {
-    console.log(`  🔄 Running migration: ${fileName}`);
-    const sql = await fs.readFile(filePath, 'utf-8');
+    console.log(`  🔄 Running migration: ${name}`);
 
     // Execute the migration SQL
     await client.query(sql);
 
     // Mark as executed
-    await markMigrationExecuted(fileName);
+    await markMigrationExecuted(name);
 
-    console.log(`  ✅ Completed: ${fileName}`);
+    console.log(`  ✅ Completed: ${name}`);
   } catch (error) {
-    console.error(`  ❌ Failed: ${fileName}`);
+    console.error(`  ❌ Failed: ${name}`);
     throw error;
   } finally {
     client.release();
@@ -99,22 +100,9 @@ export async function runMigrations(): Promise<void> {
     // Get list of already-executed migrations
     const executedMigrations = await getExecutedMigrations();
 
-    // Get all migration files
-    // Handle both development and production paths
-    const migrationsDir = process.env.NODE_ENV === 'production'
-      ? '/app/backend/migrations'  // Production (Render)
-      : path.join(__dirname, '../../migrations');  // Development
-
-    console.log(`📁 Migrations directory: ${migrationsDir}`);
-
-    const files = await fs.readdir(migrationsDir);
-    const migrationFiles = files
-      .filter(f => f.endsWith('.sql'))
-      .sort(); // Sort alphabetically to ensure order
-
     // Filter out already-executed migrations
-    const pendingMigrations = migrationFiles.filter(
-      file => !executedMigrations.has(file)
+    const pendingMigrations = migrations.filter(
+      migration => !executedMigrations.has(migration.name)
     );
 
     if (pendingMigrations.length === 0) {
@@ -125,9 +113,8 @@ export async function runMigrations(): Promise<void> {
     console.log(`📋 Found ${pendingMigrations.length} pending migration(s)`);
 
     // Execute each pending migration
-    for (const file of pendingMigrations) {
-      const filePath = path.join(migrationsDir, file);
-      await executeMigration(filePath, file);
+    for (const migration of pendingMigrations) {
+      await executeMigration(migration.name, migration.sql);
     }
 
     console.log(`✅ Successfully ran ${pendingMigrations.length} migration(s)\n`);
