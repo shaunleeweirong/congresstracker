@@ -29,10 +29,8 @@ Use this checklist to ensure all steps are completed for production deployment.
 - [ ] Choose region closest to you
 - [ ] Copy PostgreSQL connection string
 - [ ] Save connection string securely
-- [ ] Connect with psql: `psql "<connection-string>"`
-- [ ] Run migration: `\i backend/migrations/001_initial_schema.sql`
-- [ ] Verify tables: `\dt` (should show 9 tables)
-- [ ] Exit: `\q`
+- [ ] **Note:** Migrations run automatically on backend startup (no manual psql needed)
+- [ ] ⚠️ **Important:** Neon free tier databases sleep after inactivity and can take 5-15 seconds to wake up
 
 ---
 
@@ -77,9 +75,19 @@ Use this checklist to ensure all steps are completed for production deployment.
 
 ### After Deployment:
 - [ ] Wait for build to complete (~5-10 min)
+- [ ] **Watch deployment logs for these success indicators:**
+  - [ ] ✅ `Creating migrations table succeeded (took ~1800ms)`
+  - [ ] ✅ `Fetching executed migrations succeeded (took ~200ms)`
+  - [ ] ✅ `No pending migrations`
+  - [ ] ✅ `🚀 Server running on port 3001`
+  - [ ] ✅ `Your service is live 🎉`
 - [ ] Copy backend URL (e.g., `https://congresstracker-backend.onrender.com`)
 - [ ] Test health: `curl https://your-backend.onrender.com/health`
-- [ ] Should return: `{"status":"ok","timestamp":"..."}`
+- [ ] Should return: `{"status":"healthy","timestamp":"...","uptime":...,"version":"1.0.0"}`
+- [ ] ⚠️ **If deployment fails with "Connection terminated due to connection timeout":**
+  - This means Neon took too long to wake up (rare but possible)
+  - Simply trigger "Manual Deploy" → "Deploy latest commit" to retry
+  - The retry logic will handle it (up to 5 attempts with exponential backoff)
 
 ---
 
@@ -218,6 +226,51 @@ If something doesn't work, check:
 4. **GitHub Actions logs** (Actions tab → Click workflow run)
 5. [docs/DEPLOYMENT.md#troubleshooting](docs/DEPLOYMENT.md#troubleshooting)
 
+### Common Issues & Solutions:
+
+#### ❌ "Connection terminated due to connection timeout" during deployment
+**Cause:** Neon database took longer than 15 seconds to wake from sleep (rare on free tier)
+
+**Solution:**
+1. Go to Render dashboard → Your service
+2. Click "Manual Deploy" → "Deploy latest commit"
+3. Watch logs - the retry logic (5 attempts) should handle it
+4. If still failing after 3 manual deploys, check your `DATABASE_URL` is correct
+
+#### ❌ "Migration failed" or "server cannot start safely"
+**Cause:** Database connection issues or invalid migration SQL
+
+**Solution:**
+1. Verify `DATABASE_URL` environment variable is correct in Render
+2. Test connection: `psql "<your-database-url>" -c "SELECT 1"`
+3. Check Neon dashboard - database should be active (green)
+4. Trigger manual deploy after confirming DATABASE_URL
+
+#### ❌ Deployment shows "Live" but health endpoint returns 502
+**Cause:** Server crashed after startup or build output is incorrect
+
+**Solution:**
+1. Check Render logs for error messages after "Server running on port 3001"
+2. Verify build command is: `npm install && npm run build`
+3. Verify start command is: `npm start`
+4. Check that `dist/server.js` exists in build output
+
+#### ⚠️ "ChangeWarning: The onLimitReached configuration option is deprecated"
+**Cause:** Old express-rate-limit configuration (already fixed in latest code)
+
+**Solution:** This is just a warning and won't break anything. Update to latest code:
+```bash
+git pull origin master
+```
+
+#### 🐌 Slow first request (15-30 seconds)
+**Cause:** Render free tier spins down after 15 minutes of inactivity
+
+**Solution:**
+1. This is expected behavior on free tier
+2. Set up UptimeRobot (Step 9) to ping every 5 minutes
+3. Or upgrade to Render paid plan ($7/month for always-on)
+
 ---
 
 ## 🎉 Deployment Complete!
@@ -238,6 +291,32 @@ Your Congressional Trading Transparency Platform is now live!
 - ✅ UptimeRobot (Monitoring)
 
 **Total Monthly Cost: $0** 💰
+
+---
+
+## 📝 Recent Deployment History
+
+### 2025-10-27: Successful Production Deployment ✅
+
+**Deployment:** https://congresstracker-backend.onrender.com
+
+**Status:** 🟢 Live and Healthy
+
+**Key Metrics:**
+- Database connection: 1.8s (first attempt)
+- Migrations: 215ms
+- Historical data: 39,587 trades (14,587 Senate + 25,000 House)
+- Zero deprecation warnings
+- Build time: ~5 minutes
+- Health endpoint response time: <200ms
+
+**Fixes Applied:**
+- Increased database connection timeout from 2s → 15s for Neon cold starts
+- Increased idle timeout from 30s → 60s for serverless compatibility
+- Added exponential backoff retry logic to migration runner (5 attempts)
+- Fixed express-rate-limit deprecation warning (v7 compatible)
+
+**Commit:** `7162e78` - "fix: Resolve Neon database connection timeouts and rate limiter deprecation"
 
 ---
 
