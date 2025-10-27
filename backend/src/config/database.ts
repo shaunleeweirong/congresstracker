@@ -27,8 +27,8 @@ class Database {
       user: process.env.DATABASE_USER || 'postgres',
       password: process.env.DATABASE_PASSWORD || '',
       max: 20, // Maximum number of clients in the pool
-      idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-      connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
+      idleTimeoutMillis: 60000, // Close idle clients after 60 seconds (longer for serverless)
+      connectionTimeoutMillis: 15000, // Return an error after 15 seconds if connection could not be established (Neon cold start tolerance)
     };
 
     // Use DATABASE_URL if provided (for production environments like Railway)

@@ -170,15 +170,19 @@ const createRateLimiter = (
   return rateLimit({
     ...config,
     keyGenerator: createKeyGenerator(useUserKey),
-    handler: rateLimitHandler(config.message || defaultConfig.message!),
+    // Replace deprecated onLimitReached with handler (express-rate-limit v7+)
+    handler: (req: Request, res: Response, next, options: Options) => {
+      // Log only when limit is FIRST exceeded (not on every subsequent request)
+      if (req.rateLimit.used === req.rateLimit.limit + 1) {
+        const userId = req.user?.id;
+        const ip = req.ip;
+        console.warn(`Rate limit exceeded for ${userId ? `user ${userId}` : `IP ${ip}`} on ${req.path}`);
+      }
+      // Send the rate limit error response
+      throw new RateLimitError(config.message || defaultConfig.message!);
+    },
     standardHeaders: config.standardHeaders ?? true,
-    legacyHeaders: config.legacyHeaders ?? false,
-    // Add custom headers
-    onLimitReached: (req: Request, res: Response, options: Options) => {
-      const userId = req.user?.id;
-      const ip = req.ip;
-      console.warn(`Rate limit exceeded for ${userId ? `user ${userId}` : `IP ${ip}`} on ${req.path}`);
-    }
+    legacyHeaders: config.legacyHeaders ?? false
   });
 };
 

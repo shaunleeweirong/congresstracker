@@ -16,37 +16,90 @@ interface ExecutedMigration {
 }
 
 /**
- * Ensure migrations table exists
+ * Retry helper with exponential backoff
  */
-async function ensureMigrationsTable(): Promise<void> {
-  const client = await db.connect();
-  try {
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS schema_migrations (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL UNIQUE,
-        executed_at TIMESTAMP NOT NULL DEFAULT NOW()
-      )
-    `);
-    console.log('✅ Migrations table ready');
-  } finally {
-    client.release();
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  operation: string,
+  maxRetries: number = 5,
+  initialDelayMs: number = 2000
+): Promise<T> {
+  let lastError: Error | undefined;
+  let delayMs = initialDelayMs;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const startTime = Date.now();
+      console.log(`🔄 Attempt ${attempt}/${maxRetries}: ${operation}...`);
+
+      const result = await fn();
+      const duration = Date.now() - startTime;
+
+      console.log(`✅ ${operation} succeeded (took ${duration}ms)`);
+      return result;
+    } catch (error) {
+      lastError = error as Error;
+      const duration = Date.now();
+
+      console.error(`⚠️  Attempt ${attempt}/${maxRetries} failed: ${lastError.message} (took ${duration}ms)`);
+
+      if (attempt < maxRetries) {
+        console.log(`   Retrying in ${delayMs}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        delayMs *= 2; // Exponential backoff
+      }
+    }
   }
+
+  throw new Error(`${operation} failed after ${maxRetries} attempts: ${lastError?.message}`);
 }
 
 /**
- * Get list of executed migrations
+ * Ensure migrations table exists (with retry logic)
+ */
+async function ensureMigrationsTable(): Promise<void> {
+  await retryWithBackoff(
+    async () => {
+      const client = await db.connect();
+      try {
+        await client.query(`
+          CREATE TABLE IF NOT EXISTS schema_migrations (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) NOT NULL UNIQUE,
+            executed_at TIMESTAMP NOT NULL DEFAULT NOW()
+          )
+        `);
+        console.log('✅ Migrations table ready');
+      } finally {
+        client.release();
+      }
+    },
+    'Creating migrations table',
+    5,
+    2000
+  );
+}
+
+/**
+ * Get list of executed migrations (with retry logic)
  */
 async function getExecutedMigrations(): Promise<Set<string>> {
-  const client = await db.connect();
-  try {
-    const result = await client.query<ExecutedMigration>(
-      'SELECT name FROM schema_migrations ORDER BY id'
-    );
-    return new Set(result.rows.map(row => row.name));
-  } finally {
-    client.release();
-  }
+  return await retryWithBackoff(
+    async () => {
+      const client = await db.connect();
+      try {
+        const result = await client.query<ExecutedMigration>(
+          'SELECT name FROM schema_migrations ORDER BY id'
+        );
+        return new Set(result.rows.map(row => row.name));
+      } finally {
+        client.release();
+      }
+    },
+    'Fetching executed migrations',
+    3,
+    2000
+  );
 }
 
 /**
