@@ -33,7 +33,7 @@ export default function MembersPage() {
         setLoading(true);
         setError(null);
 
-        const params: any = { limit: 100 };
+        const params: Record<string, string> = { limit: '100' };
         if (filterParty) params.partyAffiliation = filterParty;
         if (filterPosition) params.position = filterPosition;
 
@@ -49,9 +49,13 @@ export default function MembersPage() {
         if (data.success && data.data.members) {
           setMembers(data.data.members);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching members:', err);
-        setError(err.message || 'Failed to load members');
+        if (err instanceof Error) {
+          setError(err.message || 'Failed to load members');
+        } else {
+          setError('Failed to load members');
+        }
       } finally {
         setLoading(false);
       }
@@ -68,7 +72,7 @@ export default function MembersPage() {
     return `${position} from ${member.stateCode}${district}`;
   };
 
-  const getPartyColor = (party: string) => {
+  const getPartyColor = (party: string | undefined) => {
     if (party === 'democratic') return 'bg-blue-100 text-blue-800';
     if (party === 'republican') return 'bg-red-100 text-red-800';
     return 'bg-accent text-accent-foreground';

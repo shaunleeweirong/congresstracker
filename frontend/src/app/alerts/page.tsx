@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { UserAlert, CreateAlertRequest, UpdateAlertRequest } from '../../../shared/types/api'
+import { UserAlert, CreateAlertRequest, UpdateAlertRequest } from '@/types/api'
 
 export default function AlertsPage() {
   const [alerts, setAlerts] = useState<UserAlert[]>([])

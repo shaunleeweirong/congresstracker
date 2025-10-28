@@ -136,7 +136,7 @@ function Calendar({
           if (orientation === "right") {
             return <ChevronRightIcon className="h-4 w-4" />
           }
-          return null
+          return <></>
         },
         DayButton: CalendarDayButton,
         ...components,

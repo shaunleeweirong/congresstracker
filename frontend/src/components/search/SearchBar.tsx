@@ -42,7 +42,7 @@ export function SearchBar({
   
   const inputRef = useRef<HTMLInputElement>(null)
   const suggestionRefs = useRef<(HTMLDivElement | null)[]>([])
-  const debounceTimer = useRef<NodeJS.Timeout>()
+  const debounceTimer = useRef<NodeJS.Timeout | undefined>(undefined)
 
   // Real API call to search endpoint
   const searchSuggestions = async (searchQuery: string, type: 'all' | 'politician' | 'stock' = 'all') => {
@@ -283,8 +283,8 @@ export function SearchBar({
               <div className="max-h-80 overflow-y-auto">
                 {suggestions.map((suggestion, index) => (
                   <div
-                    key={`${suggestion.type}-${suggestion.data.id || (suggestion.data as StockTicker).symbol}`}
-                    ref={el => suggestionRefs.current[index] = el}
+                    key={`${suggestion.type}-${'id' in suggestion.data ? suggestion.data.id : suggestion.data.symbol}`}
+                    ref={el => { suggestionRefs.current[index] = el; }}
                     className={cn(
                       "flex cursor-pointer items-center gap-3 border-b p-4 sm:p-3 last:border-b-0 hover:bg-muted/50 min-h-[44px]",
                       selectedIndex === index && "bg-muted"

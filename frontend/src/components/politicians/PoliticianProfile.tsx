@@ -138,7 +138,10 @@ export function PoliticianProfile({
   useEffect(() => {
     // Calculate trading statistics
     const totalTrades = displayTrades.length
-    const totalValue = displayTrades.reduce((sum, trade) => sum + (parseFloat(trade.estimatedValue as any) || 0), 0)
+    const totalValue = displayTrades.reduce((sum, trade) => {
+      const value = typeof trade.estimatedValue === 'string' ? parseFloat(trade.estimatedValue) : (trade.estimatedValue || 0);
+      return sum + (value || 0);
+    }, 0)
     const buyCount = displayTrades.filter(trade => trade.transactionType === 'buy').length
     const sellCount = displayTrades.filter(trade => trade.transactionType === 'sell').length
     const avgTradeValue = totalTrades > 0 ? totalValue / totalTrades : 0
@@ -387,7 +390,7 @@ export function PoliticianProfile({
                           </Badge>
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {trade.stock.companyName}
+                          {trade.stock?.companyName || 'Unknown Company'}
                         </div>
                         <div className="text-sm text-muted-foreground">
                           {formatDate(trade.transactionDate)}

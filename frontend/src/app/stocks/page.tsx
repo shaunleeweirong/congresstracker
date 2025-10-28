@@ -36,9 +36,9 @@ export default function StocksPage() {
         setLoading(true);
         setError(null);
 
-        const params: any = {
-          limit: pageSize,
-          offset: (page - 1) * pageSize,
+        const params: Record<string, string> = {
+          limit: String(pageSize),
+          offset: String((page - 1) * pageSize),
           sortBy: 'symbol',
           sortOrder: 'asc'
         };
@@ -56,9 +56,13 @@ export default function StocksPage() {
           setStocks(data.data.stocks);
           setTotal(data.data.total);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching stocks:', err);
-        setError(err.message || 'Failed to load stocks');
+        if (err instanceof Error) {
+          setError(err.message || 'Failed to load stocks');
+        } else {
+          setError('Failed to load stocks');
+        }
       } finally {
         setLoading(false);
       }

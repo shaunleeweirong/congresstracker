@@ -13,6 +13,48 @@ import { DateRangePicker } from '@/components/ui/date-range-picker'
 import { CongressionalMember, StockTicker, StockTrade } from '../../../shared/types/api'
 import { apiClient } from '@/lib/api'
 
+// Dashboard-specific interfaces
+interface DashboardMetrics {
+  totalTrades: number;
+  activeMembers: number;
+  totalVolume: number;
+  alertsTriggered: number;
+}
+
+interface TopStock {
+  symbol: string;
+  name: string;
+  trades: number;
+  value: number;
+}
+
+interface TopTrader {
+  id: string;
+  name: string;
+  party: string;
+  trades: number;
+  value: number;
+}
+
+interface TopStockResponse {
+  stock: {
+    symbol: string;
+    companyName: string | null;
+  };
+  tradeCount: number;
+  totalValue: number;
+}
+
+interface TopTraderResponse {
+  trader: {
+    id: string;
+    name: string;
+    partyAffiliation?: string;
+  };
+  tradeCount: number;
+  totalValue: number;
+}
+
 export default function Dashboard() {
   // Initialize date range to last 60 days (congressional trades have ~45 day reporting delay)
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
@@ -22,9 +64,9 @@ export default function Dashboard() {
   const [recentTrades, setRecentTrades] = useState<StockTrade[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [dashboardMetrics, setDashboardMetrics] = useState<any>(null)
-  const [topStocks, setTopStocks] = useState<any[]>([])
-  const [topTraders, setTopTraders] = useState<any[]>([])
+  const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics | null>(null)
+  const [topStocks, setTopStocks] = useState<TopStock[]>([])
+  const [topTraders, setTopTraders] = useState<TopTrader[]>([])
 
   // Fetch real data from API
   useEffect(() => {
@@ -62,7 +104,7 @@ export default function Dashboard() {
 
       if (topStocksResponse.data.success) {
         // Map backend response to frontend format
-        const topStocksData = topStocksResponse.data.data.map((item: any) => ({
+        const topStocksData = topStocksResponse.data.data.map((item: TopStockResponse) => ({
           symbol: item.stock.symbol,
           name: item.stock.companyName || item.stock.symbol,
           trades: item.tradeCount,
@@ -82,7 +124,7 @@ export default function Dashboard() {
 
       if (topTradersResponse.data.success) {
         // Map backend response to frontend format
-        const topTradersData = topTradersResponse.data.data.map((item: any) => ({
+        const topTradersData = topTradersResponse.data.data.map((item: TopTraderResponse) => ({
           id: item.trader.id,
           name: item.trader.name,
           party: item.trader.partyAffiliation || 'Unknown',
@@ -98,9 +140,13 @@ export default function Dashboard() {
         setDashboardMetrics(metricsResponse.data.data)
       }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching dashboard data:', err)
-      setError(err.message || 'Failed to load dashboard data')
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to load dashboard data')
+      } else {
+        setError('Failed to load dashboard data')
+      }
     } finally {
       setLoading(false)
     }

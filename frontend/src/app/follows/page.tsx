@@ -1,14 +1,14 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Plus, Eye, EyeOff, DollarSign, CreditCard, Users, Building2, AlertCircle, Calendar } from 'lucide-react'
+import { Plus, Eye, EyeOff, DollarSign, CreditCard, AlertCircle, Calendar } from 'lucide-react'
 import Layout from '@/components/layout/Layout'
 import { FollowManager } from '@/components/follows/FollowManager'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { UserFollow, CreateFollowRequest, CongressionalMember } from '../../../shared/types/api'
+import { UserFollow, CreateFollowRequest, CongressionalMember } from '@/types/api'
 
 export default function FollowsPage() {
   const [follows, setFollows] = useState<UserFollow[]>([])

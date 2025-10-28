@@ -7,7 +7,7 @@ import { PoliticianProfile } from '@/components/politicians/PoliticianProfile'
 import { StockProfile } from '@/components/stocks/StockProfile'
 import { AlertManager } from '@/components/alerts/AlertManager'
 import { FollowManager } from '@/components/follows/FollowManager'
-import { CongressionalMember, StockTicker } from '../../../shared/types/api'
+import { CongressionalMember, StockTicker } from '@/types/api'
 
 export default function DemoPage() {
   // Mock data for demonstrations

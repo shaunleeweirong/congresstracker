@@ -11,6 +11,16 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CongressionalMember, StockTrade, StockTicker, PortfolioHolding } from '@/types/api'
+
+// API response interface
+interface PortfolioHoldingResponse {
+  symbol: string;
+  companyName: string;
+  value: number;
+  percentage: number;
+  positionCount: number;
+  latestTransactionDate?: string;
+}
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -80,7 +90,7 @@ export default function PoliticianDetailPage() {
             const portfolioData = await portfolioResponse.json()
             if (portfolioData.success && portfolioData.data) {
               // Convert API format to PortfolioHolding format
-              const holdings: PortfolioHolding[] = portfolioData.data.topHoldings.map((holding: any) => ({
+              const holdings: PortfolioHolding[] = portfolioData.data.topHoldings.map((holding: PortfolioHoldingResponse) => ({
                 tickerSymbol: holding.symbol,
                 companyName: holding.companyName,
                 netPositionValue: holding.value,
@@ -154,7 +164,10 @@ export default function PoliticianDetailPage() {
       }
     }
 
-    const totalValue = trades.reduce((sum, trade) => sum + (parseFloat(trade.estimatedValue as any) || 0), 0)
+    const totalValue = trades.reduce((sum, trade) => {
+      const value = typeof trade.estimatedValue === 'string' ? parseFloat(trade.estimatedValue) : (trade.estimatedValue || 0);
+      return sum + (value || 0);
+    }, 0)
     const buyTrades = trades.filter(t => t.transactionType === 'buy').length
     const sellTrades = trades.filter(t => t.transactionType === 'sell').length
     

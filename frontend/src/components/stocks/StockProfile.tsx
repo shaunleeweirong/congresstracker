@@ -408,11 +408,13 @@ export function StockProfile({
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          {isCongressionalMember(trade.trader) && (
+                          {trade.trader && isCongressionalMember(trade.trader) && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
-                                onPoliticianClick?.(trade.trader)
+                                if (trade.trader && isCongressionalMember(trade.trader)) {
+                                  onPoliticianClick?.(trade.trader)
+                                }
                               }}
                               className="font-medium text-blue-600 hover:underline"
                             >

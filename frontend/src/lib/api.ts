@@ -82,9 +82,10 @@ const createApiClient = (): AxiosInstance => {
         
         // For NextAuth, the token might be in different places depending on configuration
         // We'll check for common JWT token locations
-        const token = (session as Record<string, unknown>)?.accessToken || 
-                     (session as Record<string, unknown>)?.access_token || 
-                     (session as Record<string, unknown>)?.token
+        const sessionData = session as unknown as Record<string, unknown> | null;
+        const token = sessionData?.accessToken ||
+                     sessionData?.access_token ||
+                     sessionData?.token
         
         if (token) {
           config.headers.Authorization = `Bearer ${token}`

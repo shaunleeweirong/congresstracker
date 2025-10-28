@@ -18,6 +18,15 @@ import { cn } from '@/lib/utils'
 import { StockTrade, TradeFilters, CongressionalMember, StockTicker, isCongressionalMember } from '@/types/api'
 import { apiClient } from '@/lib/api'
 
+// Extended trade type with optional source data
+interface ExtendedStockTrade extends StockTrade {
+  sourceData?: {
+    originalData?: {
+      link?: string;
+    };
+  };
+}
+
 interface TradeFeedProps {
   trades?: StockTrade[]
   onTradeClick?: (trade: StockTrade) => void
@@ -92,9 +101,13 @@ export function TradeFeed({
           setTotalTrades(response.data.data.total || 0)
           setHasMoreTrades(response.data.data.hasMore || false)
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching trades:', err)
-        setError(err.message || 'Failed to load trades')
+        if (err instanceof Error) {
+          setError(err.message || 'Failed to load trades')
+        } else {
+          setError('Failed to load trades')
+        }
       } finally {
         setLoading(false)
       }
@@ -221,8 +234,8 @@ export function TradeFeed({
           bValue = b.estimatedValue || 0
           break
         case 'traderName':
-          aValue = a.trader.name
-          bValue = b.trader.name
+          aValue = a.trader?.name || ''
+          bValue = b.trader?.name || ''
           break
         default:
           return 0
@@ -534,13 +547,16 @@ export function TradeFeed({
                     <div className="text-xs text-muted-foreground">
                       Filed: {formatDate(trade.filingDate || trade.transactionDate)}
                     </div>
-                    {(trade as any).sourceData?.originalData?.link && (
+                    {(trade as ExtendedStockTrade).sourceData?.originalData?.link && (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation()
-                          window.open((trade as any).sourceData.originalData.link, '_blank')
+                          const extendedTrade = trade as ExtendedStockTrade;
+                          if (extendedTrade.sourceData?.originalData?.link) {
+                            window.open(extendedTrade.sourceData.originalData.link, '_blank')
+                          }
                         }}
                         className="text-xs h-10 sm:h-8 w-full sm:w-auto"
                       >
@@ -583,9 +599,13 @@ export function TradeFeed({
                   setFetchedTrades(prev => [...prev, ...response.data.data.trades])
                   setHasMoreTrades(response.data.data.hasMore || false)
                 }
-              } catch (err: any) {
+              } catch (err: unknown) {
                 console.error('Error loading more trades:', err)
-                setError(err.message || 'Failed to load more trades')
+                if (err instanceof Error) {
+                  setError(err.message || 'Failed to load more trades')
+                } else {
+                  setError('Failed to load more trades')
+                }
               } finally {
                 setLoading(false)
               }
