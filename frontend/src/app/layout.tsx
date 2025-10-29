@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CongressTracker - Trading Transparency Platform",
-  description: "Track real-time stock trading activity from members of Congress",
+  title: "CongressTracker - Congressional Trading Transparency",
+  description: "Track real-time stock trading activity from members of Congress and stay informed about congressional investments",
 };
 
 export default function RootLayout({
